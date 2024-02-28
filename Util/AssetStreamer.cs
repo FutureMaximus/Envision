@@ -11,22 +11,16 @@ public interface IAssetHolder : IDisposable
 }
 
 /// <summary> Used to load heavy assets like textures without blocking the main thread. </summary>
-public class AssetStreamer
+public class AssetStreamer(Engine engine)
 {
     /// <summary> Adds tasks to the engine's task queue to load the given assets on the main thread. </summary>
-    public Engine Engine { get; }
+    public Engine Engine { get; } = engine;
     /// <summary>
     /// The queue of assets to load.
     /// </summary>
     public ConcurrentQueue<IAssetHolder> AssetsToLoad { get; } = new();
 
     private bool _assetsLoading = false;
-
-
-    public AssetStreamer(Engine engine)
-    {
-        Engine = engine;
-    }
 
     /// <summary>
     /// Loads an asset from the given path and executes the given action when it is loaded.

@@ -73,7 +73,7 @@ public class Engine
             AspectRatio = 1f,
             DepthNear = 0.1f,
             DepthFar = 10000f,
-            ClearColor = new float[] { 0.05f, 0.05f, 0.05f, 1.0f }
+            ClearColor = [0.05f, 0.05f, 0.05f, 1.0f]
         };
         Lights = new(EngineSettings.MaximumLights);
         AssetStreamer = new(this);

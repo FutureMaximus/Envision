@@ -49,16 +49,10 @@ public static class ColorHelper
         return coloredStrings;
     }
 
-    public struct ColoredString
+    public struct ColoredString(string str, Vector3 color)
     {
-        public string String { get; set; }
-        public Vector3 Color { get; set; }
-
-        public ColoredString(string str, Vector3 color)
-        {
-            String = str;
-            Color = color;
-        }
+        public string String { get; set; } = str;
+        public Vector3 Color { get; set; } = color;
     }
 
     public static KnownColor? KnownColorFromString(string color)

@@ -17,7 +17,7 @@ public class Camera
         get => MathHelper.RadiansToDegrees(_pitch);
         set
         {
-            var angle = MathHelper.Clamp(value, -89f, 89f);
+            float angle = MathHelper.Clamp(value, -89f, 89f);
             _pitch = MathHelper.DegreesToRadians(angle);
             UpdateVectors();
         }

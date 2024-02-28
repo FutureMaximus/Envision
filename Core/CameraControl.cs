@@ -60,32 +60,31 @@ public class CameraControl
             IsMoving = true;
         }
 
-        if (IsMoving)
+        if (!IsMoving) return;
+
+        if (keyboard.IsKeyDown(Keys.W))
         {
-            if (keyboard.IsKeyDown(Keys.W))
-            {
-                _camera.MoveForward(deltaTime, Speed);
-            }
-            if (keyboard.IsKeyDown(Keys.S))
-            {
-                _camera.MoveBackward(deltaTime, Speed);
-            }
-            if (keyboard.IsKeyDown(Keys.A))
-            {
-                _camera.MoveLeft(deltaTime, Speed);
-            }
-            if (keyboard.IsKeyDown(Keys.D))
-            {
-                _camera.MoveRight(deltaTime, Speed);
-            }
-            if (keyboard.IsKeyDown(Keys.Space))
-            {
-                _camera.MoveUp(deltaTime, Speed);
-            }
-            if (keyboard.IsKeyDown(Keys.LeftControl))
-            {
-                _camera.MoveDown(deltaTime, Speed);
-            }
+            _camera.MoveForward(deltaTime, Speed);
+        }
+        if (keyboard.IsKeyDown(Keys.S))
+        {
+            _camera.MoveBackward(deltaTime, Speed);
+        }
+        if (keyboard.IsKeyDown(Keys.A))
+        {
+            _camera.MoveLeft(deltaTime, Speed);
+        }
+        if (keyboard.IsKeyDown(Keys.D))
+        {
+            _camera.MoveRight(deltaTime, Speed);
+        }
+        if (keyboard.IsKeyDown(Keys.Space))
+        {
+            _camera.MoveUp(deltaTime, Speed);
+        }
+        if (keyboard.IsKeyDown(Keys.LeftControl))
+        {
+            _camera.MoveDown(deltaTime, Speed);
         }
     }
 
