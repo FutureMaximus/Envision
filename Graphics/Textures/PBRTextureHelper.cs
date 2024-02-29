@@ -18,7 +18,7 @@ public static class PBRTextureHelper
     /// or arm.
     /// </para>
     /// <para>
-    /// If there is no arm texture, the ao, metallic, or roughness texture will be used instead as an arm texture.
+    /// If there is no arm texture, ao, metallic, or roughness texture will be used instead as an arm texture.
     /// </para>
     /// </summary>
     /// <param name="name"></param>

@@ -47,5 +47,29 @@ public static class GraphicsUtil
         }
     }
 
+    /// <summary> The maximum amount of bone influences a vertex can have. </summary>
+    public readonly static int MaxBoneInfluence = 4;
+
+    public static int[] EmptyBoneIDs()
+    {
+        int[] boneIds = new int[MaxBoneInfluence];
+        for (int i = 0; i < MaxBoneInfluence; i++)
+        {
+            boneIds[i] = -1;
+        }
+
+        return boneIds;
+    }
+
+    public static float[] EmptyBoneWeights()
+    {
+        float[] boneWeights = new float[MaxBoneInfluence];
+        for (int i = 0; i < MaxBoneInfluence; i++)
+        {
+            boneWeights[i] = 0;
+        }
+
+        return boneWeights;
+    }
 }
 

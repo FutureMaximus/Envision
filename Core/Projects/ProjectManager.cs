@@ -2,7 +2,7 @@
 
 public static class ProjectManager
 {
-    public static readonly List<Project> Projects = new();
+    public static readonly List<Project> Projects = [];
 
     public static Project? ActiveProject { get; set; }
 

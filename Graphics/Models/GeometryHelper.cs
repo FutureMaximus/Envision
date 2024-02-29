@@ -63,7 +63,7 @@ public static class GeometryHelper
         if (positions.Count != normals.Count || positions.Count != textureCoordinates.Count)
             throw new ArgumentException("Position, normal, and texture coordinate lists must have the same length.");
 
-        List<GenericVertexData> vertexData = new();
+        List<GenericVertexData> vertexData = [];
 
         for (int i = 0; i < positions.Count; i++)
         {

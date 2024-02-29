@@ -11,24 +11,27 @@ namespace Envision.Graphics.Models.Generic;
 /// <summary>
 /// Mesh data for a generic model.
 /// </summary>
-public class GenericMesh : IIdentifiable, IDisposable
+public class GenericMesh(string name, GenericModelPart modelPart) : IIdentifiable, IDisposable
 {
     /// <summary> Model part that owns this mesh. </summary>
-    public GenericModelPart ParentPart;
-    public string Name;
+    public GenericModelPart ParentPart = modelPart;
+    public string Name = name;
     public Guid ID => _id;
     private readonly Guid _id = Guid.NewGuid();
     public GenericMeshShaderData ShaderData;
 
     // ====== Mesh Data ======
-    public List<Vector3> Vertices = new();
+    public List<Vector3> Vertices = [];
     public int VerticesLength = 0;
-    public List<uint> Indices = new();
+    public List<uint> Indices = [];
     public int IndicesLength = 0;
-    public List<Vector2> TextureCoords = new();
+    public List<Vector2> TextureCoords = [];
     public int TextureCoordsLength = 0;
-    public List<Vector3> Normals = new();
+    public List<Vector3> Normals = [];
     public int NormalsLength = 0;
+    private const int _maxBoneInfluence = 4;
+    public List<int> BoneIDs = new(_maxBoneInfluence);
+    public List<float> Weights = new(_maxBoneInfluence);
     public List<Vector3>? Tangents;
     public int TangentsLength = 0;
     public bool HasTangents = false;
@@ -43,6 +46,7 @@ public class GenericMesh : IIdentifiable, IDisposable
     // ====== OpenGL Data =====
     public int VertexBufferObject;
     public int TangentBufferObject; // To prevent too much data being sent to a buffer, we store the tangents in a separate buffer.
+    public int BoneBufferObject; // To prevent too much data being sent to a buffer, we store the bone data in a separate buffer.
     public int ElementBufferObject;
     public int VertexArrayObject;
     // ========================
@@ -66,15 +70,8 @@ public class GenericMesh : IIdentifiable, IDisposable
 
     // ====== Physics Data ======
     public BodyDescription? BodyDescription;
-    // ==========================
-
-    public GenericMesh(string name, GenericModelPart modelPart)
-    {
-        ParentPart = modelPart;
-        Name = name;
-    }
-
     public bool IsLoaded = false;
+    // ==========================
 
     public void Load()
     {
@@ -136,6 +133,14 @@ public class GenericMesh : IIdentifiable, IDisposable
         GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
         GL.EnableVertexAttribArray(2);
 
+        // Layout 3: Bone IDs
+        GL.VertexAttribIPointer(3, 4, VertexAttribIntegerType.Int, stride, 8 * sizeof(float));
+        GL.EnableVertexAttribArray(3);
+
+        // Layout 4: Weights
+        GL.VertexAttribPointer(4, 4, VertexAttribPointerType.Float, false, stride, 12 * sizeof(float));
+        GL.EnableVertexAttribArray(4);
+
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
         if (HasTangents)
@@ -146,13 +151,13 @@ public class GenericMesh : IIdentifiable, IDisposable
             GL.BufferData(
                 BufferTarget.ArrayBuffer,
                 Tangents?.Count * Marshal.SizeOf(typeof(Vector3)) ?? 0,
-                Tangents?.ToArray() ?? Array.Empty<Vector3>(),
+                Tangents?.ToArray() ?? [],
                 ParentPart.ModelUsageHint);
             GraphicsUtil.CheckError($"{Name} TangentBufferObject Load");
 
-            // Layout 3: Tangent
-            GL.VertexAttribPointer(3, 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
-            GL.EnableVertexAttribArray(3);
+            // Layout 5: Tangent
+            GL.VertexAttribPointer(5, 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
+            GL.EnableVertexAttribArray(5);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
@@ -164,7 +169,7 @@ public class GenericMesh : IIdentifiable, IDisposable
         // ========== Element Buffer Binding ==========
         ElementBufferObject = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-        uint[] indices = Indices.ToArray();
+        uint[] indices = [.. Indices];
         GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, ParentPart.ModelUsageHint);
         GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, ElementBufferObject, $"{Name} EBO");
         GraphicsUtil.CheckError($"{Name} EBO Load");

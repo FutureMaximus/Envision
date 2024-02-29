@@ -7,7 +7,7 @@ namespace Envision.Core.Projects;
 public abstract class ProjectGroup : IDisposable, IIdentifiable
 {
     public ProjectGroup? Parent;
-    public List<ProjectGroup> Children = new();
+    public List<ProjectGroup> Children = [];
     public Guid ID => _guid;
 
     private readonly Guid _guid = Guid.NewGuid();

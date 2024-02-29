@@ -18,8 +18,8 @@ namespace Envision.Graphics.Models;
 /// </summary>
 public static class ModelLoader
 {
-    private static readonly List<GenericModel> _processedModels = new();
-    private static readonly List<LoadedTexture> _processedTextures = new();
+    private static readonly List<GenericModel> _processedModels = [];
+    private static readonly List<LoadedTexture> _processedTextures = [];
 
     public struct ModelEntry
     {
@@ -74,6 +74,15 @@ public static class ModelLoader
         {
             return !(left == right);
         }
+    }
+
+    /// <summary> Data for a node in the model. </summary>
+    public struct AssimpNodeData
+    {
+        public string Name;
+        public Matrix4 Transformation;
+        public int ChildrenCount;
+        public List<AssimpNodeData> Children;
     }
 
     /// <summary>
@@ -179,11 +188,11 @@ public static class ModelLoader
 
     private static GenericMesh? ProcessMesh(Assimp.Mesh mesh, Scene scene, ModelEntry modelEntry, AssetStreamer assetStreamer, GenericModelPart modelPart)
     {
-        List<Vector3> positions = new();
-        List<Vector3> normals = new();
-        List<Vector2> textureCoords = new();
-        List<Vector3> tangents = new();
-        List<uint> indices = new();
+        List<Vector3> positions = [];
+        List<Vector3> normals = [];
+        List<Vector2> textureCoords = [];
+        List<Vector3> tangents = [];
+        List<uint> indices = [];
 
         for (int i = 0; i < mesh.VertexCount; i++)
         {
@@ -286,7 +295,7 @@ public static class ModelLoader
 
     private static List<Texture2D> LoadMaterialTextures(Material mat, TextureType type, ModelEntry modelEntry, AssetStreamer assetStreamer, Assimp.Mesh mesh)
     {
-        List<Texture2D> loadedTextures = new();
+        List<Texture2D> loadedTextures = [];
         for (int i = 0; i < mat.GetMaterialTextureCount(type); i++)
         {
             mat.GetMaterialTexture(type, i, out TextureSlot tex);

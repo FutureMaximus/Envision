@@ -16,11 +16,11 @@ public sealed class Project : IDisposable
     public bool Loaded;
 
     /// <summary> The project groups in the project. </summary>
-    public readonly List<ProjectGroup> ProjectGroups = new();
+    public readonly List<ProjectGroup> ProjectGroups = [];
     /// <summary> The project group that is currently selected. </summary>
     public ProjectGroup? SelectedProjectGroup;
     /// <summary> The objects that are currently selected in the project. </summary>
-    public readonly List<IIdentifiable> OutlinedObjects = new();
+    public readonly List<IIdentifiable> OutlinedObjects = [];
 
     public Project()
     {

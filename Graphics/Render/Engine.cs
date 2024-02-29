@@ -33,7 +33,7 @@ public class Engine
     public ScreenFBO? ScreenFBO;
     //public EnvironmentMap? SkyBox;
 
-    public readonly List<IRenderPass> RenderPasses = new();
+    public readonly List<IRenderPass> RenderPasses = [];
 
     /// <summary> Streamed assets that may have tasks to be ran on the main thread </summary>
     public readonly ConcurrentStack<IAssetHolder> StreamedAssets = new();
