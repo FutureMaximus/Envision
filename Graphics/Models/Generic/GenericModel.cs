@@ -1,14 +1,16 @@
-﻿using Envision.Util;
+﻿using Envision.Graphics.Animations;
+using Envision.Util;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 
 namespace Envision.Graphics.Models.Generic;
 
 /// <summary> A generic model class for custom made models. </summary>
-public class GenericModel : IModel
+public class GenericModel(string name) : IModel
 {
     /// <summary> The render data of the model. </summary>
     public ModelRenderData ModelRenderData = new();
+
     /// <summary>
     /// The usage hint of the model
     /// if it is static use StaticDraw
@@ -23,24 +25,27 @@ public class GenericModel : IModel
     public Matrix4 Transformation => Matrix4.CreateScale(Scale) * Matrix4.CreateFromQuaternion(Rotation) * Matrix4.CreateTranslation(Position);
 
     /// <summary> The root model parts that can contain children parts. </summary>
-    public List<GenericModelPart> Parts = new();
+    public List<GenericModelPart> Parts = [];
 
+    /// <summary> The bones associated with the model. </summary>
+    public Dictionary<string, BoneInfo> Bones = [];
+    /// <summary> The bone counter. </summary>
+    public int BoneCounter = 0;
+
+    /// <summary> The unique identifier of the model see <see cref="IIdentifiable"/>. </summary>
     public Guid ID => _id;
 
+    /// <summary> The name of the model. </summary>
     public string Name { get => _name; set => _name = value ?? throw new ArgumentNullException(nameof(value)); }
-    private string _name;
+    private string _name = name;
 
     private readonly Guid _id = Guid.NewGuid();
-
-    public GenericModel(string name)
-    {
-        _name = name;
-    }
 
     public void Load()
     {
         foreach (GenericModelPart part in Parts)
         {
+            // TODO: Implement bone data here so we can set it in the buffer.
             part.Load();
         }
     }

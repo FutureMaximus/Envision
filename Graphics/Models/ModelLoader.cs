@@ -4,6 +4,7 @@ using Envision.Graphics.Shaders.Data;
 using Envision.Graphics.Textures;
 using Envision.Util;
 using Envision.Graphics.Models.Generic;
+using Envision.Graphics.Animations;
 
 namespace Envision.Graphics.Models;
 
@@ -171,12 +172,13 @@ public static class ModelLoader
 
         for (int i = 0; i < Node.MeshCount; i++)
         {
-            Assimp.Mesh mesh = scene.Meshes[Node.MeshIndices[i]];
+            Mesh mesh = scene.Meshes[Node.MeshIndices[i]];
             GenericMesh? modelMesh = ProcessMesh(mesh, scene, modelEntry, assetStreamer, modelPart);
             if (modelMesh is null)
             {
                 continue;
             }
+            ExtractBoneWeightForVertices(mesh, ref modelEntry.CoreModel, ref modelMesh);
             modelPart.Meshes.Add(modelMesh);
         }
 
@@ -186,7 +188,61 @@ public static class ModelLoader
         }
     }
 
-    private static GenericMesh? ProcessMesh(Assimp.Mesh mesh, Scene scene, ModelEntry modelEntry, AssetStreamer assetStreamer, GenericModelPart modelPart)
+    private static void ExtractBoneWeightForVertices(Mesh mesh, ref GenericModel model, ref GenericMesh genericMesh)
+    {
+        for (int boneIndex = 0; boneIndex < mesh.BoneCount; boneIndex++)
+        {
+            int boneID = -1;
+            string boneName = mesh.Bones[boneIndex].Name;
+
+            if (!model.Bones.TryGetValue(boneName, out BoneInfo outBoneVal))
+            {
+                Matrix4x4 offsetMat = mesh.Bones[boneIndex].OffsetMatrix;
+                // TODO: Is this properly implemented?
+                Matrix4 offset = new(offsetMat.A1, offsetMat.A2, offsetMat.A3, offsetMat.A4,
+                    offsetMat.B1, offsetMat.B2, offsetMat.B3, offsetMat.B4,
+                    offsetMat.C1, offsetMat.C2, offsetMat.C3, offsetMat.C4,
+                    offsetMat.D1, offsetMat.D2, offsetMat.D3, offsetMat.D4);
+                BoneInfo newBoneInfo = new(model.BoneCounter, offset);
+                model.Bones.Add(boneName, newBoneInfo);
+                boneID = model.BoneCounter;
+                model.BoneCounter++;
+            }
+            else
+            {
+                boneID = outBoneVal.ID;
+            }
+
+            if (boneID == -1)
+            {
+                throw new AssimpException($"Bone ID is -1 for bone {boneName} in model {model.Name}");
+            }
+
+            List<VertexWeight> weights = mesh.Bones[boneIndex].VertexWeights;
+            int weightCount = mesh.Bones[boneIndex].VertexWeightCount;
+
+            for (int i = 0; i < weightCount; i++)
+            {
+                int vertexID = weights[i].VertexID;
+                float weight = weights[i].Weight;
+
+                if (vertexID >= genericMesh.Vertices.Count)
+                {
+                    throw new AssimpException($"Vertex ID {vertexID} is greater than the vertex count of {genericMesh.Vertices.Count} in model {model.Name}");
+                }
+                if (i >= GraphicsUtil.MaxBoneInfluence)
+                {
+                    throw new AssimpException($"Bone influence count is greater than the " +
+                        $"maximum bone influence count of {GraphicsUtil.MaxBoneInfluence} in model {model.Name}");
+                }
+
+                genericMesh.BoneIDs.Add(boneID);
+                genericMesh.Weights.Add(weight);
+            }
+        }
+    }
+
+    private static GenericMesh? ProcessMesh(Mesh mesh, Scene scene, ModelEntry modelEntry, AssetStreamer assetStreamer, GenericModelPart modelPart)
     {
         List<Vector3> positions = [];
         List<Vector3> normals = [];

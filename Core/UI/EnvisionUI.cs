@@ -10,7 +10,7 @@ namespace Envision.Core.UI;
 public static class EnvisionUI
 {
     private static bool _showNewObjectUI = false;
-    private static Type? _newObjectToCreate = null;
+    private readonly static Type? _newObjectToCreate = null;
 
     /// <summary>
     /// The main UI for Envision. If you have to use fields or the UI involves methods, use a sub UI.

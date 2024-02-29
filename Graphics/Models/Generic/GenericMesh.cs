@@ -29,9 +29,8 @@ public class GenericMesh(string name, GenericModelPart modelPart) : IIdentifiabl
     public int TextureCoordsLength = 0;
     public List<Vector3> Normals = [];
     public int NormalsLength = 0;
-    private const int _maxBoneInfluence = 4;
-    public List<int> BoneIDs = new(_maxBoneInfluence);
-    public List<float> Weights = new(_maxBoneInfluence);
+    public List<int> BoneIDs = new(GraphicsUtil.MaxBoneInfluence);
+    public List<float> Weights = new(GraphicsUtil.MaxBoneInfluence);
     public List<Vector3>? Tangents;
     public int TangentsLength = 0;
     public bool HasTangents = false;
