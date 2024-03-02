@@ -26,10 +26,10 @@ public static class GraphicsUtil
     }
 
     [Conditional("DEBUG")]
-    public static void LabelObject(ObjectLabelIdentifier objLabelIdent, int glObject, string name)
+    public static void LabelObject(ObjectLabelIdentifier objLabel, int glObject, string name)
     {
         if (KHRDebugSupported)
-            GL.ObjectLabel(objLabelIdent, glObject, name.Length, name);
+            GL.ObjectLabel(objLabel, glObject, name.Length, name);
     }
 
     /// <summary>Checks errors when debug is enabled.</summary>

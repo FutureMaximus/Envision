@@ -45,7 +45,6 @@ public class GenericModel(string name) : IModel
     {
         foreach (GenericModelPart part in Parts)
         {
-            // TODO: Implement bone data here so we can set it in the buffer.
             part.Load();
         }
     }
