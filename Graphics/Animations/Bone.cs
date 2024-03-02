@@ -34,7 +34,10 @@ public class Bone
 
     public void Update(float animationTime)
     {
-
+        Matrix4 translation = InterpolatePosition(animationTime);
+        Matrix4 rotation = InterpolateRotation(animationTime);
+        Matrix4 scale = InterpolateScale(animationTime);
+        LocalTransform = scale * rotation * translation;
     }
 
     /// <summary>
@@ -97,6 +100,68 @@ public class Bone
         return 0;
     }
 
+    /// <summary>Gets normalized value for lerp and slerp interpolation.</summary>
+    public static double GetScaleFactor(double lastFrame, double nextFrame, double animationTime)
+    {
+        double totalTime = nextFrame - lastFrame;
+        double currentTime = animationTime - lastFrame;
+        double scaleFactor = currentTime / totalTime;
+        return scaleFactor;
+    }
+
+    /// <summary>
+    /// Figures out which position keyframes to interpolate and interpolates them.
+    /// </summary>
+    public Matrix4 InterpolatePosition(float animationTime)
+    {
+        if (PositionData.Count == 1)
+        {
+            return Matrix4.CreateTranslation(PositionData[0].Value);
+        }
+        int positionIndex = GetPositionIndex(animationTime);
+        int nextPositionIndex = (positionIndex + 1) % PositionData.Count;
+        float scaleFactor = (float)GetScaleFactor(PositionData[positionIndex].Time, PositionData[nextPositionIndex].Time, animationTime);
+        Vector3 finalPosition = Vector3.Lerp(PositionData[positionIndex].Value, PositionData[nextPositionIndex].Value, scaleFactor);
+        return Matrix4.CreateTranslation(finalPosition);
+    }
+
+    /// <summary>
+    /// Figures out which rotation keyframes to interpolate and interpolates them.
+    /// </summary>
+    public Matrix4 InterpolateRotation(float animationTime)
+    {
+        if (RotationData.Count == 1)
+        {
+            return Matrix4.CreateFromQuaternion(RotationData[0].Value);
+        }
+        int rotationIndex = GetRotationIndex(animationTime);
+        int nextRotationIndex = (rotationIndex + 1) % RotationData.Count;
+        float scaleFactor = (float)GetScaleFactor(RotationData[rotationIndex].Time, RotationData[nextRotationIndex].Time, animationTime);
+        OpenTK.Mathematics.Quaternion finalRotation = 
+            OpenTK.Mathematics.Quaternion.Slerp(RotationData[rotationIndex].Value, RotationData[nextRotationIndex].Value, scaleFactor);
+        return Matrix4.CreateFromQuaternion(finalRotation);
+    }
+
+    /// <summary>
+    /// Figures out which scale keyframes to interpolate and interpolates them.
+    /// </summary>
+    public Matrix4 InterpolateScale(float animationTime)
+    {
+        if (ScaleData.Count == 1)
+        {
+            return Matrix4.CreateScale(ScaleData[0].Value);
+        }
+        int scaleIndex = GetScaleIndex(animationTime);
+        int nextScaleIndex = (scaleIndex + 1) % ScaleData.Count;
+        float scaleFactor = (float)GetScaleFactor(ScaleData[scaleIndex].Time, ScaleData[nextScaleIndex].Time, animationTime);
+        Vector3 finalScale = Vector3.Lerp(ScaleData[scaleIndex].Value, ScaleData[nextScaleIndex].Value, scaleFactor);
+        return Matrix4.CreateScale(finalScale);
+    }
+
+    /// <summary>
+    /// Gets the keyframes from the animation channel.
+    /// </summary>
+    /// <param name="channel"></param>
     private unsafe void GetKeys(in AiNodeAnim channel)
     {
         NumberOfPositionKeys = channel.NumPositionKeys;
