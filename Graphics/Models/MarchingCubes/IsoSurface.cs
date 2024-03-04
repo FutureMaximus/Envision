@@ -3,7 +3,10 @@ using OpenTK.Mathematics;
 
 namespace Envision.Graphics.Models.MarchingCubes;
 
-/// <summary> General purpose isosurface class for constructing meshes from marching cubes. </summary>
+/// <summary> 
+/// General purpose isosurface class for constructing meshes from marching cubes. 
+/// Try not to go below 1 for the cell size, big performance hit.
+/// </summary>
 public class IsoSurface
 {
     public GenericMesh? Mesh;

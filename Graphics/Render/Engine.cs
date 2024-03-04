@@ -277,7 +277,7 @@ public class Engine
         DeltaTime = deltaTime;
         TimeElapsed += deltaTime;
 
-        List<IAssetHolder> streamedAssets = StreamedAssets.ToList() ?? new();
+        List<IAssetHolder> streamedAssets = StreamedAssets.ToList() ?? [];
         foreach (IAssetHolder asset in streamedAssets)
         {
             if (asset is AssetStreamer.StreamingAsset streamingAsset)

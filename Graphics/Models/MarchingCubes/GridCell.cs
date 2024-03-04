@@ -3,20 +3,11 @@
 namespace Envision.Graphics.Models.MarchingCubes;
 
 /// <summary> Grid cell for marching cubes. </summary>
-public struct GridCell
+public struct GridCell(int x, int y, int z)
 {
-    public int X, Y, Z;
-    public Vector3[] Vertices;
-    public float[] Values;
-
-    public GridCell(int x, int y, int z)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-        Vertices = new Vector3[8];
-        Values = new float[8];
-    }
+    public int X = x, Y = y, Z = z;
+    public Vector3[] Vertices = new Vector3[8];
+    public float[] Values = new float[8];
 
     public readonly override bool Equals(object? obj)
     {

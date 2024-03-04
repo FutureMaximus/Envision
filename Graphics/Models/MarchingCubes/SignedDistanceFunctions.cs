@@ -3,7 +3,8 @@ using Envision.Util;
 
 namespace Envision.Graphics.Models.MarchingCubes;
 
-/// <summary> Signed distance functions for use with the marching cubes algorithm. 
+/// <summary> 
+/// Signed distance functions for use with the marching cubes algorithm. 
 /// See <see cref="MarchingCube"/> and <see cref="IsoSurface"/>. 
 /// Referenced from https://iquilezles.org/articles/distfunctions/.
 /// </summary>

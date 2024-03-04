@@ -9,7 +9,6 @@ using Envision.Graphics.Textures;
 using Envision.Graphics.Models.Generic;
 using Envision.Util;
 using System.Drawing;
-using Envision.Core.Editor;
 using Envision.Core.Projects;
 using Envision.Core.Projects.ProjectGroups;
 
