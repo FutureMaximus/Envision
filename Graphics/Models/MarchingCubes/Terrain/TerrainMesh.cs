@@ -1,12 +1,7 @@
 ﻿using Envision.Util;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Envision.Graphics.Models.MarchingCubes.Terrain;
 
@@ -76,7 +71,7 @@ public class TerrainMesh : IDisposable
         ElementBufferObject = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
         GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, ElementBufferObject, $"{terrainMeshID} EBO");
-        uint[] indices = Indices.ToArray();
+        uint[] indices = [.. Indices];
         IndicesLength = indices.Length;
         GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
         GraphicsUtil.CheckError($"{terrainMeshID} EBO Load");

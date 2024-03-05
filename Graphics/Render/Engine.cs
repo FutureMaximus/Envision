@@ -164,26 +164,7 @@ public class Engine
                 );
         }
 
-        // ============= UBO (Global Shader Data) =============
-        ProjViewUBO = GL.GenBuffer();
-        // 64 bytes for projection matrix, 64 bytes for view matrix, 16 bytes for camera position.
-        GL.BindBuffer(BufferTarget.UniformBuffer, ProjViewUBO);
-        GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, ProjViewUBO, "ProjViewUBO Location 0");
-        int projViewUBOSize = Marshal.SizeOf(typeof(Matrix4)) * 2 + Marshal.SizeOf(typeof(Vector3));
-        GL.BufferData(BufferTarget.UniformBuffer, projViewUBOSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
-        GraphicsUtil.CheckError("UBO 0 (ProjView) Buffer Data");
-
-        GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 0, ProjViewUBO);
-        GraphicsUtil.CheckError("UBO 0 (ProjView) Buffer Base");
-
-        ProjViewUniform projViewUniform = new(Projection, Camera.View, Camera.Position);
-        GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, Marshal.SizeOf(typeof(Matrix4)), ref projViewUniform.Projection);
-        GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)), Marshal.SizeOf(typeof(Matrix4)), ref projViewUniform.View);
-        GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)) * 2, Marshal.SizeOf(typeof(Vector3)), ref projViewUniform.ViewPos);
-        GraphicsUtil.CheckError("UBO 0 (ProjView) Error");
-
-        GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-        // ====================================================
+        GlobalShaderData.Initialize(this);
 
         ShaderHandler = new(Config.Settings.ShaderPath);
         Shader screenFBOShader = new(ShaderHandler, "ScreenFBO", "screen");

@@ -36,7 +36,7 @@ public class ShaderHandler(string shaderPath) : IDisposable
 
     public void Dispose()
     {
-        foreach (Shader shader in Shaders.Values)
+        foreach (IShader shader in Shaders.Values)
         {
             shader.Dispose();
         }

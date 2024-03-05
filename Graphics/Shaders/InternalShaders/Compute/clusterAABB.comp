@@ -13,8 +13,8 @@ layout(local_size_x = 1, local_size_y = 1) in;
 // TODO: Add a way to determine active clusters?
 
 // Input
-uniform float zNear; // Near plane distance.
-uniform float zFar; // Far plane distance.
+layout(location = 0) uniform float zNear; // Near plane distance.
+layout(location = 1) uniform float zFar; // Far plane distance.
 
 // Output
 struct Cluster // A cluster volume is represented using an AABB we use vec4s for memory alignment.

@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using Envision.Util;
+using OpenTK.Graphics.OpenGL4;
 
 namespace Envision.Graphics.Shaders;
 
@@ -21,6 +22,8 @@ public class ComputeShader : IShader
         string source = Shader.GetShaderFile(sourceName, "comp", handler);
         GL.ShaderSource(Handle, source);
         Shader.CompileShader(Handle, name);
+        GraphicsUtil.LabelObject(ObjectLabelIdentifier.Shader, Handle, name);
+        GraphicsUtil.CheckError($"{name} Compute Shader");
     }
 
     public void Use() => GL.UseProgram(Handle);
