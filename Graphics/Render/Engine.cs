@@ -101,6 +101,7 @@ public class Engine
     /// </summary>
     public void Load()
     {
+        // TODO: Have a global point light indexer.
         for (int i = 0; i < EngineSettings.MaximumLights - 1; i++)
         {
             Light? light = Lights[i];

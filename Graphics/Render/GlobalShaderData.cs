@@ -19,15 +19,26 @@ public static class GlobalShaderData
     public static int Screen2ViewSSBO { get; private set; }
     /// <summary>Shader storage buffer object that contains the light data.</summary>
     public static int LightDataSSBO { get; private set; }
+    /// <summary>The light index list SSBO.</summary>
+    public static int LightIndexListSSBO { get; private set; }
+    /// <summary>The light grid SSBO.</summary>
+    public static int LightGridSSBO { get; private set; }
+    /// <summary>Light index global count SSBO.</summary>
+    public static int LightIndexGlobalCountSSBO { get; private set; }
 
     private static readonly uint GRID_SIZE_X = 16;
     private static readonly uint GRID_SIZE_Y = 9;
     private static readonly uint GRID_SIZE_Z = 4;
     private static readonly uint GRID_SIZE = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z;
+    private static uint MAX_LIGHTS_PER_CLUSTER;
 
     public static void LoadBuffers(Engine engine)
     {
+        MAX_LIGHTS_PER_CLUSTER = (uint)engine.EngineSettings.MaximumLights % 950;
+
         // Uniform Buffer Objects (Read-Only)
+
+        // ProjView UBO
         ProjViewUBO = GL.GenBuffer();
         // 64 bytes for projection matrix, 64 bytes for view matrix, 16 bytes for camera position.
         GL.BindBuffer(BufferTarget.UniformBuffer, ProjViewUBO);
@@ -48,6 +59,8 @@ public static class GlobalShaderData
         GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
         // Shader Storage Buffer Objects (Read-Write)
+
+        // Cluster Data SSBO
         // 4 bytes for min location (x, y, z) and 4 bytes for max location (x, y, z).
         ClusterSSBO = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, ClusterSSBO);
@@ -57,6 +70,7 @@ public static class GlobalShaderData
         GraphicsUtil.CheckError("SSBO 1 (Cluster) Buffer Base");
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
+        // Screen2View SSBO
         Screen2View screen2View;
         Matrix4.Invert(engine.Projection, out screen2View.InverseProjection);
         screen2View.TileSizeX = GRID_SIZE_X;
@@ -81,6 +95,8 @@ public static class GlobalShaderData
         GraphicsUtil.CheckError("SSBO 2 (Screen2View) Buffer Base");
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
+        // Light Data SSBO
+        // 12 bytes for position, 4 bytes for max range.
         LightDataSSBO = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LightDataSSBO);
         GL.BufferData(BufferTarget.ShaderStorageBuffer, 
@@ -104,7 +120,39 @@ public static class GlobalShaderData
         GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 3, LightDataSSBO);
         GraphicsUtil.CheckError("SSBO 3 (LightData) Buffer Base");
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
-        
+
+        // Light Index List SSBO
+        uint numberOfLights = GRID_SIZE * MAX_LIGHTS_PER_CLUSTER;
+        LightIndexListSSBO = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LightIndexListSSBO);
+        GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(uint) * (int)numberOfLights, IntPtr.Zero, BufferUsageHint.StaticCopy);
+        GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, LightIndexListSSBO, "LightIndexListSSBO Location 4");
+        GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 4, LightIndexListSSBO);
+        GraphicsUtil.CheckError("SSBO 4 (LightIndexList) Buffer Base");
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
+        // Light Grid SSBO
+        // Every tile takes two unsigned ints one to represent the number of lights in that grid.
+        // Another to represent the offset to the light index list from where to begin reading light indexes from.
+        // This implementation is from the Olsson paper.
+        LightGridSSBO = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LightGridSSBO);
+        GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(uint) * 2 * (int)GRID_SIZE, IntPtr.Zero, BufferUsageHint.StaticCopy);
+        GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, LightGridSSBO, "LightGridSSBO Location 5");
+        GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 5, LightGridSSBO);
+        GraphicsUtil.CheckError("SSBO 5 (LightGrid) Buffer Base");
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
+        // Light Index Global Count SSBO
+        LightIndexGlobalCountSSBO = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LightIndexGlobalCountSSBO);
+        GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(uint), IntPtr.Zero, BufferUsageHint.StaticCopy);
+        GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, LightIndexGlobalCountSSBO, "LightIndexGlobalCountSSBO Location 6");
+        GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 6, LightIndexGlobalCountSSBO);
+        GraphicsUtil.CheckError("SSBO 6 (LightIndexGlobalCount) Buffer Base");
+        GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
+        GraphicsUtil.CheckError("Global Shader Data Buffer Init");
     }
 
     public static void UpdateProjViewUBO(ref ProjViewUniform projViewUniform)
@@ -115,6 +163,8 @@ public static class GlobalShaderData
         GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)) * 2, Marshal.SizeOf(typeof(Vector3)), ref projViewUniform.ViewPos);
         GraphicsUtil.CheckError("UBO 0 (ProjView) Error");
     }
+
+    // TODO: Update Light Data if there are changes to the lights.
 
     public static void Dispose()
     {
