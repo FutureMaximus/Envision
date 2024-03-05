@@ -11,7 +11,7 @@ public static class GlobalShaderData
 {
     public static void Initialize(Engine engine)
     {
-        // Uniform Buffer Objects
+        // Uniform Buffer Objects (Read-Only)
         engine.ProjViewUBO = GL.GenBuffer();
         // 64 bytes for projection matrix, 64 bytes for view matrix, 16 bytes for camera position.
         GL.BindBuffer(BufferTarget.UniformBuffer, engine.ProjViewUBO);
@@ -31,6 +31,6 @@ public static class GlobalShaderData
 
         GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
-        // Shader Storage Buffer Objects
+        // Shader Storage Buffer Objects (Read-Write)
     }
 }
