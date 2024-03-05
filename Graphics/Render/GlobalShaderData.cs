@@ -26,15 +26,16 @@ public static class GlobalShaderData
     /// <summary>Light index global count SSBO.</summary>
     public static int LightIndexGlobalCountSSBO { get; private set; }
 
-    private static readonly uint GRID_SIZE_X = 16;
-    private static readonly uint GRID_SIZE_Y = 9;
-    private static readonly uint GRID_SIZE_Z = 4;
-    private static readonly uint GRID_SIZE = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z;
-    private static uint MAX_LIGHTS_PER_CLUSTER;
+    public static readonly uint GRID_SIZE_X = 16;
+    public static readonly uint GRID_SIZE_Y = 9;
+    public static readonly uint GRID_SIZE_Z = 4;
+    public static readonly uint GRID_SIZE = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z;
+    public static uint MAX_LIGHTS_PER_CLUSTER => _maxLightsPerCluster;
+    private static uint _maxLightsPerCluster;
 
     public static void LoadBuffers(Engine engine)
     {
-        MAX_LIGHTS_PER_CLUSTER = (uint)engine.EngineSettings.MaximumLights % 950;
+        _maxLightsPerCluster = (uint)engine.EngineSettings.MaximumLights % 950;
 
         // Uniform Buffer Objects (Read-Only)
 
@@ -99,7 +100,7 @@ public static class GlobalShaderData
         // 12 bytes for position, 4 bytes for max range.
         LightDataSSBO = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LightDataSSBO);
-        GL.BufferData(BufferTarget.ShaderStorageBuffer, 
+        GL.BufferData(BufferTarget.ShaderStorageBuffer,
             Marshal.SizeOf(typeof(GPUPointLightData)) * engine.EngineSettings.MaximumLights, IntPtr.Zero, BufferUsageHint.DynamicDraw);
         GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, LightDataSSBO, "LightDataSSBO Location 3");
         int pointLightIndex = 0;

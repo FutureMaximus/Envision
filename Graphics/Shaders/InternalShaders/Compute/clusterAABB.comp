@@ -10,7 +10,7 @@ layout(local_size_x = 1, local_size_y = 1) in;
 // - zFar
 // - ScreenDimensions
 // - Aspect Ratio
-// TODO: Add a way to determine active clusters?
+// TODO: Add a way to determine active clusters? We'd need the depth buffer for that could offer some extra optimization.
 
 // Input
 layout(location = 0) uniform float zNear; // Near plane distance.
@@ -34,11 +34,17 @@ layout (std430, binding = 1) buffer clusterAABB
     VolumeTileAABB cluster[];
 };
 
+// The screen to view data.
 layout (std430, binding = 2) buffer screenToView
 {
     mat4 inverseProjection;
-    uvec4 tileSizes;
-    uvec2 screenDimensions;
+    uint tileSizeX;
+    uint tileSizeY;
+    uint tileSizeZ;
+    uint tileSizePx;
+    uvec2 viewPxSize;
+    float scale;
+    float bias;
 };
 
 vec4 clipToView(vec4 clip);
@@ -53,13 +59,12 @@ void main()
 	const vec3 eyePos = vec3(0.0);
 
 	// Per cluster variables
-	uint tileSizePx = tileSizes[3]; // Amount of pixels in x that the square tile uses.
     uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x +
                      gl_WorkGroupID.z * (gl_NumWorkGroups.x * gl_NumWorkGroups.y); // Linear ID of the thread/cluster.
 
     // Get the min and max point in screen space.
-    vec4 maxPointScreenSpace = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top Right
-    vec4 minPointScreenSpace = vec4(gl_WorkGroupID.xy * tileSizePx, -1.0, 1.0); // Bottom left
+    vec4 maxPointScreenSpace = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) / tileSizePx, -1.0, 1.0); // Top Right
+    vec4 minPointScreenSpace = vec4(gl_WorkGroupID.xy / tileSizePx, -1.0, 1.0); // Bottom left
 
     // Get the min and max point in view space.
     vec3 maxPointViewSpace = screen2View(maxPointScreenSpace).xyz;
@@ -104,17 +109,14 @@ vec4 clipToView(vec4 clip)
 {
     vec4 view = inverseProjection * clip;
 
-    // Perspective projection
-    view = view / view.w;
-
-    return view;
+    return view / view.w; // Perspective projection
 }
 
 // Converts a screen space coordinate to a view space coordinate.
 vec4 screen2View(vec4 screen)
 {
     // Convert to normalized device coordinates
-    vec2 texCoord = screen.xy / screenDimensions.xy;
+    vec2 texCoord = screen.xy / viewPxSize.xy;
 
     // Convert to clipspace
     vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y) * 2.0 - 1.0, screen.z, screen.w);
