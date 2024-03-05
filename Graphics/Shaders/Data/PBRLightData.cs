@@ -18,18 +18,6 @@ public struct PBRLightData : IShaderData
     public float Linear;
     /// <summary>Quadratic attenuation factor.</summary>
     public float Quadratic;
-
-    public PBRLightData(Vector3 color, float intensity, float constant, float linear, float quadratic)
-    {
-        Color = color;
-        Intensity = intensity;
-        Constant = constant;
-        Linear = linear;
-        Quadratic = quadratic;
-    }
-    public PBRLightData(Vector3 color, float intensity)
-    {
-        Color = color;
-        Intensity = intensity;
-    }
+    /// <summary>Whether the light is enabled.</summary>
+    public bool Enabled;
 }

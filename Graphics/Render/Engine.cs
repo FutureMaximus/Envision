@@ -26,8 +26,6 @@ public class Engine
     public Camera Camera { get; } = new();
     public Matrix4 Projection;
     public Matrix4 Orthographic;
-    /// <summary> Uniform buffer object that contains the projection, view, and view position. </summary>
-    public int ProjViewUBO;
     public Settings EngineSettings;
 
     public ScreenFBO? ScreenFBO;
@@ -68,7 +66,7 @@ public class Engine
             UseForwardRendering = true,
             UseDebugRendering = false,
             UseOrthographic = false,
-            MaximumLights = 8,
+            MaximumLights = 1000,
             FieldOfView = 45f,
             AspectRatio = 1f,
             DepthNear = 0.1f,
@@ -103,6 +101,24 @@ public class Engine
     /// </summary>
     public void Load()
     {
+        for (int i = 0; i < EngineSettings.MaximumLights - 1; i++)
+        {
+            Light? light = Lights[i];
+            if (light != null) continue;
+            PBRLightData newLightData = new()
+            {
+                Color = new Vector3(1.0f, 1.0f, 1.0f),
+                Intensity = 5.0f,
+                MaxRange = 0,
+                Constant = 1.0f,
+                Linear = 0.09f,
+                Quadratic = 0.032f,
+                Enabled = false
+                    
+            };
+            PBRPointLight newLight = new(new Vector3(0), newLightData);
+            Lights.Add(newLight);
+        }
         PBRLightData lightData = new()
         {
             Color = new Vector3(1.0f, 1.0f, 1.0f),
@@ -164,7 +180,7 @@ public class Engine
                 );
         }
 
-        GlobalShaderData.Initialize(this);
+        GlobalShaderData.LoadBuffers(this);
 
         ShaderHandler = new(Config.Settings.ShaderPath);
         Shader screenFBOShader = new(ShaderHandler, "ScreenFBO", "screen");
@@ -220,13 +236,8 @@ public class Engine
         // ==================================
 
         // ============= UBO (Global Shader Data) =============
-        GL.BindBuffer(BufferTarget.UniformBuffer, ProjViewUBO);
-
         ProjViewUniform projViewUniform = new(Projection, Camera.View, Camera.Position);
-        GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, Marshal.SizeOf(typeof(Matrix4)), ref projViewUniform.Projection);
-        GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)), Marshal.SizeOf(typeof(Matrix4)), ref projViewUniform.View);
-        GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)) * 2, Marshal.SizeOf(typeof(Vector3)), ref projViewUniform.ViewPos);
-        GraphicsUtil.CheckError("UBO 0 (ProjView) Error");
+        GlobalShaderData.UpdateProjViewUBO(ref projViewUniform);
         // ====================================================
 
         // ============= Render ==============
@@ -316,7 +327,7 @@ public class Engine
         }
         ScreenFBO?.Dispose();
         ShaderHandler?.Dispose();
-        GL.DeleteBuffer(ProjViewUBO);
+        GlobalShaderData.Dispose();
         TextureEntries.Dispose();
     }
 }

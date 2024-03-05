@@ -24,7 +24,7 @@ public class ClusteredForwardRendering(Engine engine) : IRenderPass
 
     public void Render()
     {
-        throw new NotImplementedException();
+
     }
 
     public void Dispose()

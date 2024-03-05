@@ -66,7 +66,7 @@ void main()
     vec3 minPointViewSpace = screen2View(minPointScreenSpace).xyz;
 
     // The near and far planes of the tile
-    float tileNear  = -zNear * pow(zFar/ zNear, gl_WorkGroupID.z/ float(gl_NumWorkGroups.z));
+    float tileNear  = -zNear * pow(zFar/ zNear, gl_WorkGroupID.z / float(gl_NumWorkGroups.z));
     float tileFar   = -zNear * pow(zFar/ zNear, (gl_WorkGroupID.z + 1) / float(gl_NumWorkGroups.z));
 
     // Finding the 4 intersection points made from the maxPoint to the cluster near/far plane
@@ -79,14 +79,15 @@ void main()
     vec3 maxPointAABB = max(max(minPointNear, minPointFar),max(maxPointNear, maxPointFar));
 
     // Store the AABBs in the SSBO
-    cluster[tileIndex].minPoint  = vec4(minPointAABB , 0.0);
-    cluster[tileIndex].maxPoint  = vec4(maxPointAABB , 0.0);
+    cluster[tileIndex].minPoint = vec4(minPointAABB , 0.0);
+    cluster[tileIndex].maxPoint = vec4(maxPointAABB , 0.0);
 }
 
 // Creates a line from the eye to the screenpoint, then finds its intersection
 // with a z oriented plane located at the given distance to the origin.
 // This is used to find the points on the corners of the AABBs of the clusters that encompasses them.
-vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance){
+vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance)
+{
     // Because this is a Z based normal this is fixed
     vec3 normal = vec3(0.0, 0.0, 1.0);
 

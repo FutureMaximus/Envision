@@ -5,22 +5,16 @@ using OpenTK.Mathematics;
 
 namespace Envision.Graphics.Render.RenderPasses.SubPasses;
 
-public class ScreenFBO : IRenderPass
+public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
 {
-    public Shader Shader;
+    public Shader Shader = shader;
+    public Vector2i WindowSize = windowSize;
     public int FramebufferObject;
     public Texture2D? ScreenTexture;
     public int RenderBufferObject;
-    public Vector2i WindowSize;
 
     public int ScreenQuadVAO;
     public int ScreenQuadVBO;
-
-    public ScreenFBO(Shader shader, Vector2i windowSize)
-    {
-        Shader = shader;
-        WindowSize = windowSize;
-    }
 
     public bool IsEnabled { get; set; }
 
@@ -69,8 +63,8 @@ public class ScreenFBO : IRenderPass
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
 
-    private readonly float[] _screenQuadVertices = new float[]
-    {
+    private readonly float[] _screenQuadVertices =
+    [
         // Positions   // TexCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
         -1.0f, -1.0f,  0.0f, 0.0f,
@@ -79,7 +73,7 @@ public class ScreenFBO : IRenderPass
         -1.0f,  1.0f,  0.0f, 1.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
          1.0f,  1.0f,  1.0f, 1.0f
-    };
+    ];
 
     public void Bind() => GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferObject);
 
