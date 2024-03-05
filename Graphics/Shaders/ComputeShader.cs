@@ -1,9 +1,4 @@
 ﻿using OpenTK.Graphics.OpenGL4;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Envision.Graphics.Shaders;
 
@@ -27,6 +22,8 @@ public class ComputeShader : IShader
         GL.ShaderSource(Handle, source);
         Shader.CompileShader(Handle, name);
     }
+
+    public void Use() => GL.UseProgram(Handle);
 
     public void Dispose()
     {

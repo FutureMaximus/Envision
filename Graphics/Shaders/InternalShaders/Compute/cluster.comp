@@ -2,11 +2,18 @@
 
 layout(local_size_x = 1, local_size_y = 1) in;
 
+// Description: This is the compute shader that calculates the AABBs of the clusters.
+// Note: If these variables change the compute shader must be ran again to recalculate the AABBs.
+// We could just run the compute shader every frame but where's the fun in that?
+// - FOV
+// - zNear
+// - zFar
+// - screenDimensions
+// - aspect ratio
+
 // Input
-uint tileSizePx; // How many pixels in x does a square tile use.
-uint tileIndex; // Linear ID of the thread/cluster.
-float zFar; // Far plane distance.
-float zNear; // Near plane distance.
+uniform float zNear; // Near plane distance.
+uniform float zFar; // Far plane distance.
 
 // Output
 struct Cluster // A cluster volume is represented using an AABB we use vec4s for memory alignment.
@@ -15,9 +22,82 @@ struct Cluster // A cluster volume is represented using an AABB we use vec4s for
 	vec4 maxPoint; // Maximum point of the cluster in world space.
 };
 
-//Each cluster has it's own thread ID in x, y and z
-//We dispatch 16x9x24 threads, one thread per cluster
+// SSBO (Shader Storage Buffer Object) initialization
+struct VolumeTileAABB 
+{
+    vec4 minPoint;
+    vec4 maxPoint;
+};
+layout (std430, binding = 1) buffer clusterAABB 
+{
+    VolumeTileAABB cluster[];
+};
+
+layout (std430, binding = 2) buffer screenToView 
+{
+    mat4 inverseProjection;
+    uvec4 tileSizes;
+    uvec2 screenDimensions;
+};
+
+vec4 clipToView(vec4 clip);
+vec4 screen2View(vec4 screen);
+vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance);
+
+// Each cluster has it's own thread ID in x, y and z
+// Here we dispatch 16x9x24 threads, one thread per cluster
 void main()
 {
 	const vec3 eyePos = vec3(0.0);
+
+	// Per cluster variables
+	uint tileSizePx = tileSizes[3]; // Amount of pixels in x that the square tile uses.
+    uint tileIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x +
+                     gl_WorkGroupID.z * (gl_NumWorkGroups.x * gl_NumWorkGroups.y); // Linear ID of the thread/cluster.
+
+    // Get the min and max point in screen space.
+    vec4 maxPointScreenSpace = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top Right
+    vec4 minPointScreenSpace = vec4(gl_WorkGroupID.xy * tileSizePx, -1.0, 1.0); // Bottom left
+
+    vec3 maxPointViewSpace = screen2View(maxPointScreenSpace).xyz;
+    vec3 minPointViewSpace = screen2View(minPointScreenSpace).xyz;
 }
+
+// Creates a line from the eye to the screenpoint, then finds its intersection
+// with a z oriented plane located at the given distance to the origin.
+// This is used to find the points on the corners of the AABBs of the clusters that encompasses them.
+vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance){
+    // Because this is a Z based normal this is fixed
+    vec3 normal = vec3(0.0, 0.0, 1.0);
+
+    vec3 ab = B - A;
+
+    // Computing the intersection length for the line and the plane
+    float t = (zDistance - dot(normal, A)) / dot(normal, ab);
+
+    return A + t * ab;
+}
+
+// Converts a clip space coordinate to a view space coordinate.
+vec4 clipToView(vec4 clip) 
+{
+    vec4 view = inverseProjection * clip;
+
+    // Perspective projection
+    view = view / view.w;
+
+    return view;
+}
+
+// Converts a screen space coordinate to a view space coordinate.
+vec4 screen2View(vec4 screen)
+{
+    // Convert to normalized device coordinates
+    vec2 texCoord = screen.xy / screenDimensions.xy;
+
+    // Convert to clipspace
+    vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y) * 2.0 - 1.0, screen.z, screen.w);
+
+    return clipToView(clip);
+}
+

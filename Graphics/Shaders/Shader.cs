@@ -213,34 +213,49 @@ public class Shader : IShader
     }
 
     public void SetInt(string name, ref int data) => GL.Uniform1(GetUniformLocation(name), data);
+    public static void SetInt(int location, ref int data) => GL.Uniform1(location, data);
 
     public void SetInt(string name, int data) => GL.Uniform1(GetUniformLocation(name), data);
+    public static void SetInt(int location, int data) => GL.Uniform1(location, data);
 
     public void SetFloat(string name, ref float data) => GL.Uniform1(GetUniformLocation(name), data);
+    public static void SetFloat(int location, ref float data) => GL.Uniform1(location, data);
 
     public void SetFloat(string name, float data) => GL.Uniform1(GetUniformLocation(name), data);
+    public static void SetFloat(int location, float data) => GL.Uniform1(location, data);
 
     public void SetBool(string name, bool data) => GL.Uniform1(GetUniformLocation(name), data ? 1 : 0);
+    public static void SetBool(int location, bool data) => GL.Uniform1(location, data ? 1 : 0);
 
     public void SetMatrix3(string name, ref Matrix3 data) => GL.UniformMatrix3(GetUniformLocation(name), true, ref data);
+    public static void SetMatrix3(int location, ref Matrix3 data) => GL.UniformMatrix3(location, true, ref data);
 
     public void SetMatrix4(string name, ref Matrix4 data) => GL.UniformMatrix4(GetUniformLocation(name), true, ref data);
+    public static void SetMatrix4(int location, ref Matrix4 data) => GL.UniformMatrix4(location, true, ref data);
 
     public void SetMatrix3(string name, ref Matrix3 data, bool transpose) => GL.UniformMatrix3(GetUniformLocation(name), transpose, ref data);
+    public static void SetMatrix3(int location, ref Matrix3 data, bool transpose) => GL.UniformMatrix3(location, transpose, ref data);
 
     public void SetMatrix4(string name, ref Matrix4 data, bool transpose) => GL.UniformMatrix4(GetUniformLocation(name), transpose, ref data);
+    public static void SetMatrix4(int location, ref Matrix4 data, bool transpose) => GL.UniformMatrix4(location, transpose, ref data);
 
     public void SetVector2(string name, ref Vector2 data) => GL.Uniform2(GetUniformLocation(name), ref data);
+    public static void SetVector2(int location, ref Vector2 data) => GL.Uniform2(location, ref data);
 
     public void SetVector2(string name, Vector2 data) => GL.Uniform2(GetUniformLocation(name), data);
+    public static void SetVector2(int location, Vector2 data) => GL.Uniform2(location, data);
 
     public void SetVector3(string name, ref Vector3 data) => GL.Uniform3(GetUniformLocation(name), ref data);
+    public static void SetVector3(int location, ref Vector3 data) => GL.Uniform3(location, ref data);
 
     public void SetVector3(string name, Vector3 data) => GL.Uniform3(GetUniformLocation(name), data);
+    public static void SetVector3(int location, Vector3 data) => GL.Uniform3(location, data);
 
     public void SetVector4(string name, ref Vector4 data) => GL.Uniform4(GetUniformLocation(name), ref data);
+    public static void SetVector4(int location, ref Vector4 data) => GL.Uniform4(location, ref data);
 
     public void SetVector4(string name, Vector4 data) => GL.Uniform4(GetUniformLocation(name), data);
+    public static void SetVector4(int location, Vector4 data) => GL.Uniform4(location, data);
 
     public static implicit operator int(Shader shader) => shader.Handle;
 
