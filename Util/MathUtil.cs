@@ -8,7 +8,7 @@ public static class MathUtil
     public static Vector3 VecAbs(float x, float y, float z) => new(Math.Abs(x), Math.Abs(y), Math.Abs(z));
 
     /// <summary>
-    /// Returns the aspect ratio of the given width and height in the form 16:9 (1920x1080) using a vector2.
+    /// Returns the aspect ratio of the given width and height in the form 16:9 (1920x1080 for instance) using a vector2.
     /// </summary>
     public static Vector2i GetAspectRatio(int width, int height)
     {

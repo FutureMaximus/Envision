@@ -1,4 +1,5 @@
 ﻿using Envision.Graphics.Shaders;
+using OpenTK.Graphics.OpenGL4;
 
 namespace Envision.Graphics.Render.RenderPasses;
 
@@ -17,8 +18,9 @@ public class ClusteredForwardRendering(Engine engine) : IRenderPass
         if (ClusterAABBShader is not null)
         {
             ClusterAABBShader.Use();
-            Shader.SetFloat(0, Engine.EngineSettings.DepthNear);
-            Shader.SetFloat(1, Engine.EngineSettings.DepthFar);
+            Shader.SetFloat(0, Engine.EngineSettings.DepthNear); // zNear
+            Shader.SetFloat(1, Engine.EngineSettings.DepthFar); // zFar
+            GL.DispatchCompute(GlobalShaderData.GRID_SIZE_X, GlobalShaderData.GRID_SIZE_Y, GlobalShaderData.GRID_SIZE_Z);
         }
     }
 

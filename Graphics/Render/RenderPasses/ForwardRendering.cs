@@ -171,22 +171,8 @@ public class ForwardRendering : IRenderPass
         _pbrShader = new(Engine.ShaderHandler, "PBR", "pbr");
         for (int i = 0; i < Engine.EngineSettings.MaximumLights; i++)
         {
-            Light? light = Engine.Lights.Count > i ? Engine.Lights[i] : null;
-            if (light is null)
-            {
-                light = new PBRPointLight(
-                    Vector3.Zero,
-                    new PBRLightData(
-                        Vector3.Zero,
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        0.0f
-                        )
-                );
-                Engine.Lights.Add(light);
-            }
-            else if (light is PBRDirectionalLight pbrDirectionalLight)
+            Light light = Engine.Lights[i];
+            if (light is PBRDirectionalLight pbrDirectionalLight)
             {
                 DirectionalLight = pbrDirectionalLight;
             }
@@ -291,7 +277,7 @@ public class ForwardRendering : IRenderPass
             }
         }
         
-        List<GenericModel> genericModels = new();
+        List<GenericModel> genericModels = [];
         if (activeProject.SelectedProjectGroup is ModelProjectGroup modelProject)
         {
             if (modelProject.SelectedModel is GenericModel genericModel)

@@ -113,7 +113,8 @@ void main()
 
     uint offset = atomicAdd(globalIndexCount, visibleLightCount);
 
-    for(uint i = 0; i < visibleLightCount; ++i){
+    for(uint i = 0; i < visibleLightCount; ++i) 
+    {
         globalLightIndexList[offset + i] = visibleLightIndices[i];
     }
 

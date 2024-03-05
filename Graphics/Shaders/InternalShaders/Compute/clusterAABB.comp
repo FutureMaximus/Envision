@@ -10,7 +10,7 @@ layout(local_size_x = 1, local_size_y = 1) in;
 // - zFar
 // - ScreenDimensions
 // - Aspect Ratio
-// TODO: Add a way to determine active clusters? We'd need the depth buffer for that could offer some extra optimization.
+// TODO: Add a way to determine active clusters? We'd need the depth buffer for that but could offer some extra optimization.
 
 // Input
 layout(location = 0) uniform float zNear; // Near plane distance.
@@ -29,7 +29,7 @@ struct VolumeTileAABB
     vec4 minPoint;
     vec4 maxPoint;
 };
-layout (std430, binding = 1) buffer clusterAABB 
+layout (std430, binding = 1) buffer clusterAABB
 {
     VolumeTileAABB cluster[];
 };

@@ -1,4 +1,4 @@
-#version 430 core
+﻿#version 430 core
 
 out vec4 FragColor;
 
@@ -114,79 +114,6 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 // ===================================
 
-// ============ Shadow Calculation =============
-vec3 gridSamplingDisk[20] = vec3[]
-(
-   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
-   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
-   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
-   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
-);
-
-float ShadowCalculation(vec3 fragPosWorldSpace)
-{
-    // select cascade layer
-	vec4 fragPosViewSpace = view * vec4(fragPosWorldSpace, 1.0);
-	float depthValue = abs(fragPosViewSpace.z);
-
-	int layer = -1;
-	for (int i = 0; i < cascadeCount; ++i)
-    {
-        if (depthValue < cascadePlaneDistances[i])
-        {
-            layer = i;
-            break;
-        }
-    }
-	if (layer == -1)
-    {
-        layer = cascadeCount;
-    }
-
-	vec4 fragPosLightSpace = lightSpaceMatrices[layer] * vec4(fragPosWorldSpace, 1.0);
-	// perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	// transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-
-	// get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-
-	// keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-    if (currentDepth > 1.0)
-    {
-        return 0.0;
-    }
-	// calculate bias (based on depth map resolution and slope)
-	vec3 normal = normalize(fs_in.Normal);
-	float bias = max(0.05 * (1.0 - dot(normal, dirLight.direction)), 0.005);
-	if (layer == cascadeCount)
-	{
-		bias *= 1 / (farPlane * 0.5f);
-	}
-	else
-	{
-		bias *= 1 / (cascadePlaneDistances[layer] * 0.5f);
-	}
-
-	// PCF (percentage-closer filtering) to smooth the edges
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
-	for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, vec3(projCoords.xy + vec2(x, y) * texelSize, layer)).r;
-            shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;        
-        }    
-    }
-	shadow /= 9.0;
-
-	return shadow;
-}
-// =============================================
-
 vec3 GetNormalFromMap()
 {
     vec3 tangentNormal = texture(material.normalMap, fs_in.TexCoords).xyz * 2.0 - 1.0;
@@ -223,9 +150,6 @@ void main()
 
 	vec3 V = normalize(fs_in.ViewPos - fs_in.FragPos);
 
-	//float shadow = 0.0;
-	//float shadow = shadowEnabled ? ShadowCalculation(fs_in.FragPos) : 0.0;
-
 	vec3  albedo = pow(texture(material.albedoMap, fs_in.TexCoords).rgb, vec3(2.2));
 	float ambientOcclusion = texture(material.ARMMap, fs_in.TexCoords).r;
 	float roughness = texture(material.ARMMap, fs_in.TexCoords).g;
@@ -239,7 +163,6 @@ void main()
 	// Reflectance equation
 	vec3 Lo = vec3(0.0);
 	Lo += CalcDirectionalLight(dirLight, N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
-	//Lo *= (1.0 - shadow);
 	//for (int i = 0; i < NR_LIGHTS; i++)
 	//{
 		// Add to outgoing radiance Lo
@@ -316,4 +239,3 @@ vec3 CalcPointLight(Light light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, floa
 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
 }
-
