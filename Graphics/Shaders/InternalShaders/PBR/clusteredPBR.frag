@@ -8,6 +8,8 @@ in VS_OUT {
 	vec3  Normal;
 	vec3  ViewPos;
 	mat3  TBN;
+	float zNear;
+	float zFar;
 } fs_in;
 
 // ========== Uniforms ===============
@@ -52,7 +54,41 @@ layout (std140) uniform LightSpaceMatrices
 };
 uniform float cascadePlaneDistances[16];
 uniform int cascadeCount;   // number of frusta - 1
+
 // ===================================
+
+// ====== Storage Buffer Objects ======
+
+struct LightGrid
+{
+    uint offset;
+    uint count;
+};
+
+layout (std430, binding = 2) buffer screenToView
+{
+    mat4 inverseProjection;
+    uint tileSizeX;
+    uint tileSizeY;
+    uint tileSizeZ;
+    uint tileSizePx;
+    uvec2 viewPxSize;
+    float scale;
+    float bias;
+};
+
+layout (std430, binding = 4) buffer lightIndexSSBO
+{
+    uint globalLightIndexList[];
+};
+
+// The light grid this contains the offsets and counts for the lights within a grid.
+layout (std430, binding = 5) buffer lightGridSSBO
+{
+    LightGrid lightGrid[];
+};
+
+// ====================================
 
 const float PI = 3.14159265359;
 
@@ -114,6 +150,8 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 // ===================================
 
+// ======== Utility Methods ==========
+// Returns the normal from the normal map this is used when tangents are not available.
 vec3 GetNormalFromMap()
 {
     vec3 tangentNormal = texture(material.normalMap, fs_in.TexCoords).xyz * 2.0 - 1.0;
@@ -130,6 +168,14 @@ vec3 GetNormalFromMap()
 
     return normalize(TBN * tangentNormal);
 }
+
+// Linearize the depth value
+float linearDepth(float depthSample)
+{
+    float ndc = 2.0 * depthSample - 1.0; // [-1, 1]
+    return 2.0 * fs_in.zNear * fs_in.zFar / (fs_in.zFar + fs_in.zNear - ndc * (fs_in.zFar - fs_in.zNear)); // [0, 1]
+}
+// ===================================
 
 vec3 CalcDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0);
 vec3 CalcPointLight(Light light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float roughness, float metallic, vec3 F0);
@@ -160,14 +206,24 @@ void main()
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, albedo, metallic);
 
+	//Locating which cluster you are a part of
+    uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0.0));
+    uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy * tileSizePx ), zTile);
+    uint tileIndex = tiles.x +
+                     tileSizeX * tiles.y +
+                     (tileSizeX * tileSizeY) * tiles.z;
+
+	// Point lights
+    uint lightCount       = lightGrid[tileIndex].count;
+    uint lightIndexOffset = lightGrid[tileIndex].offset;
+
 	// Reflectance equation
 	vec3 Lo = vec3(0.0);
 	Lo += CalcDirectionalLight(dirLight, N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
-	//for (int i = 0; i < NR_LIGHTS; i++)
-	//{
-		// Add to outgoing radiance Lo
-	//	Lo += CalcPointLight(pointLights[i], N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
-	//}
+	for (uint i = 0; i < lightCount; i++)
+	{
+		Lo += CalcPointLight(pointLights[ globalLightIndexList[lightIndexOffset + i] ], N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
+	}
 
 	// Will be replaced by IBL
 	vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;

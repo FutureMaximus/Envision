@@ -42,7 +42,6 @@ layout (std430, binding = 3) buffer lightSSBO
     PointLight pointLight[];
 };
 
-// The global light index list.
 layout (std430, binding = 4) buffer lightIndexSSBO
 {
     uint globalLightIndexList[];
@@ -54,7 +53,6 @@ layout (std430, binding = 5) buffer lightGridSSBO
     LightGrid lightGrid[];
 };
 
-// The global index count.
 layout (std430, binding = 6) buffer globalIndexCountSSBO
 {
     uint globalIndexCount;

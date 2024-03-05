@@ -20,12 +20,16 @@ out VS_OUT {
 	vec3  Normal;
 	vec3  ViewPos;
 	mat3  TBN;
+	float zNear;
+	float zFar;
 } vs_out;
 
 const int MAX_BONES = 100;
 const int MAX_BONES_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
+uniform float zNear;
+uniform float zFar;
 uniform mat4 model;
 uniform mat3 normalMatrix;
 uniform bool hasTangents;
@@ -53,6 +57,8 @@ void main()
 	vs_out.Normal = normal;
 	vs_out.TexCoords = aTexCoords;
 	vs_out.ViewPos = viewPos;
+	vs_out.zNear = zNear;
+	vs_out.zFar = zFar;
 	if (hasTangents) {
 		vec3 T = normalize(aTangent * normalMatrix);
 		vec3 N = normal;
