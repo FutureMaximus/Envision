@@ -8,8 +8,9 @@ layout(local_size_x = 1, local_size_y = 1) in;
 // - FOV
 // - zNear
 // - zFar
-// - screenDimensions
-// - aspect ratio
+// - ScreenDimensions
+// - Aspect Ratio
+// TODO: Add a way to determine active clusters?
 
 // Input
 uniform float zNear; // Near plane distance.
@@ -23,7 +24,7 @@ struct Cluster // A cluster volume is represented using an AABB we use vec4s for
 };
 
 // SSBO (Shader Storage Buffer Object) initialization
-struct VolumeTileAABB 
+struct VolumeTileAABB
 {
     vec4 minPoint;
     vec4 maxPoint;
@@ -33,7 +34,7 @@ layout (std430, binding = 1) buffer clusterAABB
     VolumeTileAABB cluster[];
 };
 
-layout (std430, binding = 2) buffer screenToView 
+layout (std430, binding = 2) buffer screenToView
 {
     mat4 inverseProjection;
     uvec4 tileSizes;
@@ -45,7 +46,8 @@ vec4 screen2View(vec4 screen);
 vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance);
 
 // Each cluster has it's own thread ID in x, y and z
-// Here we dispatch 16x9x24 threads, one thread per cluster
+// Here we dispatch 16x9x24 threads, one thread per cluster.
+// Note: If the aspect ratio changes and its not 16:9 we need to account for that.
 void main()
 {
 	const vec3 eyePos = vec3(0.0);
@@ -59,8 +61,26 @@ void main()
     vec4 maxPointScreenSpace = vec4(vec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y + 1) * tileSizePx, -1.0, 1.0); // Top Right
     vec4 minPointScreenSpace = vec4(gl_WorkGroupID.xy * tileSizePx, -1.0, 1.0); // Bottom left
 
+    // Get the min and max point in view space.
     vec3 maxPointViewSpace = screen2View(maxPointScreenSpace).xyz;
     vec3 minPointViewSpace = screen2View(minPointScreenSpace).xyz;
+
+    // The near and far planes of the tile
+    float tileNear  = -zNear * pow(zFar/ zNear, gl_WorkGroupID.z/ float(gl_NumWorkGroups.z));
+    float tileFar   = -zNear * pow(zFar/ zNear, (gl_WorkGroupID.z + 1) / float(gl_NumWorkGroups.z));
+
+    // Finding the 4 intersection points made from the maxPoint to the cluster near/far plane
+    vec3 minPointNear = lineIntersectionToZPlane(eyePos, minPointViewSpace, tileNear);
+    vec3 minPointFar  = lineIntersectionToZPlane(eyePos, minPointViewSpace, tileFar);
+    vec3 maxPointNear = lineIntersectionToZPlane(eyePos, maxPointViewSpace, tileNear);
+    vec3 maxPointFar  = lineIntersectionToZPlane(eyePos, maxPointViewSpace, tileFar);
+
+    vec3 minPointAABB = min(min(minPointNear, minPointFar),min(maxPointNear, maxPointFar));
+    vec3 maxPointAABB = max(max(minPointNear, minPointFar),max(maxPointNear, maxPointFar));
+
+    // Store the AABBs in the SSBO
+    cluster[tileIndex].minPoint  = vec4(minPointAABB , 0.0);
+    cluster[tileIndex].maxPoint  = vec4(maxPointAABB , 0.0);
 }
 
 // Creates a line from the eye to the screenpoint, then finds its intersection
