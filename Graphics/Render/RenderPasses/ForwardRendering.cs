@@ -439,7 +439,7 @@ public class ForwardRendering : IRenderPass
         for (int i = 0; i < lightMatrices.Count; i++)
         {
             List<Vector4> corners = FrustrumCornersWorldSpace(Engine.Projection, lightMatrices[i]);
-            List<Vector3> vec3s = new();
+            List<Vector3> vec3s = [];
             foreach (Vector4 corner in corners)
             {
                 vec3s.Add(corner.Xyz);

@@ -4,11 +4,13 @@ using Envision.Util;
 
 namespace Envision.Graphics.Shaders;
 
-// TODO: Utilize asset streamer for this.
-public class Shader : IDisposable
+/// <summary>
+/// Shader class for handling general OpenGL shaders with vertex, fragment, and optional geometry, tessellation control, and tessellation evaluation shaders.
+/// </summary>
+public class Shader : IShader
 {
     /// <summary> The shader handler that owns this shader. </summary>
-    public ShaderHandler ShaderHandler;
+    public ShaderHandler ShaderHandler { get; }
     public string Name { get; }
     public int Handle { get; }
 
@@ -28,7 +30,7 @@ public class Shader : IDisposable
         int vertexShader;
         try
         {
-            vertexSource = File.ReadAllText(GetShaderFile(sourceName, "vert"));
+            vertexSource = File.ReadAllText(GetShaderFile(sourceName, "vert", handler));
             vertexShader = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vertexShader, vertexSource);
             CompileShader(vertexShader, name);
@@ -43,7 +45,7 @@ public class Shader : IDisposable
         int tessControlShader = -1;
         try
         {
-            tessControlSource = File.ReadAllText(GetShaderFile(sourceName, "tesc"));
+            tessControlSource = File.ReadAllText(GetShaderFile(sourceName, "tesc", handler));
             tessControlShader = GL.CreateShader(ShaderType.TessControlShader);
             GL.ShaderSource(tessControlShader, tessControlSource);
             CompileShader(tessControlShader, name);
@@ -54,7 +56,7 @@ public class Shader : IDisposable
         int tessEvalShader = -1;
         try
         {
-            tessEvalSource = File.ReadAllText(GetShaderFile(sourceName, "tese"));
+            tessEvalSource = File.ReadAllText(GetShaderFile(sourceName, "tese", handler));
             tessEvalShader = GL.CreateShader(ShaderType.TessEvaluationShader);
             GL.ShaderSource(tessEvalShader, tessEvalSource);
             CompileShader(tessEvalShader, name);
@@ -65,7 +67,7 @@ public class Shader : IDisposable
         int geometryShader = -1;
         try
         {
-            geometrySource = File.ReadAllText(GetShaderFile(sourceName, "geom"));
+            geometrySource = File.ReadAllText(GetShaderFile(sourceName, "geom", handler));
             geometryShader = GL.CreateShader(ShaderType.GeometryShader);
             GL.ShaderSource(geometryShader, geometrySource);
             CompileShader(geometryShader, name);
@@ -77,7 +79,7 @@ public class Shader : IDisposable
         int fragmentShader;
         try
         {
-            fragmentSource = File.ReadAllText(GetShaderFile(sourceName, "frag"));
+            fragmentSource = File.ReadAllText(GetShaderFile(sourceName, "frag", handler));
             fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
             GL.ShaderSource(fragmentShader, fragmentSource);
             CompileShader(fragmentShader, name);
@@ -148,22 +150,22 @@ public class Shader : IDisposable
         DebugLogger.Log($"<aqua>Successfully compiled shader <white>{name}.");
     }
 
-    private string GetShaderFile(string sourceName, string extension)
+    public static string GetShaderFile(string sourceName, string extension, ShaderHandler shaderHandler)
     {
-        string shaderFile = Path.Combine(ShaderHandler.ShaderPath, $"{sourceName}.{extension}");
+        string shaderFile = Path.Combine(shaderHandler.ShaderPath, $"{sourceName}.{extension}");
         if (!File.Exists(shaderFile))
         {
-            string[] files = Directory.GetFiles(ShaderHandler.ShaderPath, $"{sourceName}.{extension}", SearchOption.AllDirectories);
+            string[] files = Directory.GetFiles(shaderHandler.ShaderPath, $"{sourceName}.{extension}", SearchOption.AllDirectories);
             if (files.Length == 0)
             {
-                throw new FileNotFoundException($"Source {sourceName}.{extension} for shader {Name} could not be found.");
+                throw new FileNotFoundException($"Source {sourceName}.{extension} for shader {sourceName} could not be found.");
             }
             shaderFile = files[0];
         }
         return shaderFile;
     }
 
-    private static void CompileShader(int shader, string shaderName)
+    public static void CompileShader(int shader, string shaderName)
     {
         GL.CompileShader(shader);
 

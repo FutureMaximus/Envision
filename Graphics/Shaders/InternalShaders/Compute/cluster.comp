@@ -1,0 +1,23 @@
+﻿#version 430 core
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+// Input
+uint tileSizePx; // How many pixels in x does a square tile use.
+uint tileIndex; // Linear ID of the thread/cluster.
+float zFar; // Far plane distance.
+float zNear; // Near plane distance.
+
+// Output
+struct Cluster // A cluster volume is represented using an AABB we use vec4s for memory alignment.
+{
+	vec4 minPoint; // Minimum point of the cluster in world space.
+	vec4 maxPoint; // Maximum point of the cluster in world space.
+};
+
+//Each cluster has it's own thread ID in x, y and z
+//We dispatch 16x9x24 threads, one thread per cluster
+void main()
+{
+	const vec3 eyePos = vec3(0.0);
+}

@@ -1,18 +1,12 @@
 ﻿namespace Envision.Graphics.Shaders;
 
-public class ShaderHandler : IDisposable
+public class ShaderHandler(string shaderPath) : IDisposable
 {
-    public Dictionary<string, Shader> Shaders = new();
-    public string[] ShaderFiles;
-    public string ShaderPath;
-    
-    public ShaderHandler(string shaderPath)
-    {
-        ShaderPath = shaderPath;
-        ShaderFiles = Directory.GetFiles(shaderPath);
-    }
+    public Dictionary<string, IShader> Shaders = [];
+    public string[] ShaderFiles = Directory.GetFiles(shaderPath);
+    public string ShaderPath = shaderPath;
 
-    public void AddShader(Shader shader)
+    public void AddShader(IShader shader)
     {
         if (ShaderPath is null)
         {
@@ -25,14 +19,14 @@ public class ShaderHandler : IDisposable
         Shaders.Add(shader.Name, shader);
     }
 
-    public Shader? GetShader(string name)
+    public IShader? GetShader(string name)
     {
         if (ShaderPath is null)
         {
             throw new NullReferenceException("Shader path is not set.");
         }
 
-        if (Shaders.TryGetValue(name, out Shader? shader))
+        if (Shaders.TryGetValue(name, out IShader? shader))
         {
             return shader;
         }
