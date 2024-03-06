@@ -22,23 +22,7 @@ struct Material
 };
 uniform Material material;
 
-uniform bool shadowEnabled;
 uniform bool hasTangents;
-uniform sampler2DArray shadowMap;
-uniform float farPlane;
-uniform mat4 view;
-
-struct Light
-{
-	vec3  position;
-	vec3  color;
-	float intensity;
-	float constant;
-	float linear;
-	float quadratic;
-};
-#define NR_LIGHTS 7
-uniform Light pointLights[NR_LIGHTS];
 
 struct DirectionalLight
 {
@@ -65,6 +49,16 @@ struct LightGrid
     uint count;
 };
 
+struct PointLight
+{
+	vec3  position;
+	vec3  color;
+	float intensity;
+	float constant;
+	float linear;
+	float quadratic;
+};
+
 layout (std430, binding = 2) buffer screenToView
 {
     mat4 inverseProjection;
@@ -75,6 +69,12 @@ layout (std430, binding = 2) buffer screenToView
     uvec2 viewPxSize;
     float scale;
     float bias;
+};
+
+// The point light data.
+layout (std430, binding = 3) buffer lightSSBO
+{
+    PointLight pointLights[];
 };
 
 layout (std430, binding = 4) buffer lightIndexSSBO
@@ -178,7 +178,7 @@ float linearDepth(float depthSample)
 // ===================================
 
 vec3 CalcDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0);
-vec3 CalcPointLight(Light light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float roughness, float metallic, vec3 F0);
+vec3 CalcPointLight(uint index, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float roughness, float metallic, vec3 F0);
 
 void main()
 {
@@ -206,12 +206,10 @@ void main()
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, albedo, metallic);
 
-	//Locating which cluster you are a part of
+	// Locating which cluster you are a part of
     uint zTile     = uint(max(log2(linearDepth(gl_FragCoord.z)) * scale + bias, 0.0));
     uvec3 tiles    = uvec3( uvec2( gl_FragCoord.xy * tileSizePx ), zTile);
-    uint tileIndex = tiles.x +
-                     tileSizeX * tiles.y +
-                     (tileSizeX * tileSizeY) * tiles.z;
+    uint tileIndex = tiles.x + tileSizeX * tiles.y + (tileSizeX * tileSizeY) * tiles.z;
 
 	// Point lights
     uint lightCount       = lightGrid[tileIndex].count;
@@ -222,13 +220,12 @@ void main()
 	Lo += CalcDirectionalLight(dirLight, N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
 	for (uint i = 0; i < lightCount; i++)
 	{
-		Lo += CalcPointLight(pointLights[ globalLightIndexList[lightIndexOffset + i] ], N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
+		Lo += CalcPointLight(globalLightIndexList[lightIndexOffset + i], N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
 	}
 
 	// Will be replaced by IBL
 	vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
 
-	//vec3 color = ambient + (Lo * shadow);
 	vec3 color = ambient + Lo;
 
 	// HDR
@@ -265,8 +262,10 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 fragPos, 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 CalcPointLight(Light light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0)
+vec3 CalcPointLight(uint index, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0)
 {
+	PointLight light = pointLights[index];
+
 	vec3 L = normalize(light.position - fs_in.FragPos);
 	vec3 H = normalize(V + L);
 	float dist = length(light.position - fs_in.FragPos);

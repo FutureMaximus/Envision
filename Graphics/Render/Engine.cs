@@ -199,7 +199,9 @@ public class Engine
         foreach (IRenderPass renderPass in RenderPasses)
         {
             if (renderPass.IsEnabled)
+            {
                 renderPass.Load();
+            }
         }
     }
 

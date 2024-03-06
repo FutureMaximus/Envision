@@ -10,13 +10,14 @@ public class ComputeShader : IShader
     public string Name { get; }
     public int Handle { get; }
 
-    public ComputeShader(string name, string sourceName, ShaderHandler handler)
+    public ComputeShader(ShaderHandler handler, string name, string sourceName)
     {
         if (handler.ShaderPath is null)
         {
             throw new NullReferenceException("Shader path is not set.");
         }
         ShaderHandler = handler;
+        ShaderHandler.Shaders.Add(name, this);
         Name = name;
         Handle = GL.CreateShader(ShaderType.ComputeShader);
         string source = Shader.GetShaderFile(sourceName, "comp", handler);

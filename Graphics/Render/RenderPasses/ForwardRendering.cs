@@ -52,13 +52,13 @@ public class ForwardRendering : IRenderPass
             LightProjectionTuning = -10.0f,
             ShadowStartDepthNear = 500f,
             ShadowEndDepthFar = 2000.0f,
-            ShadowCascadeLevels = new float[4]
-            {
+            ShadowCascadeLevels =
+            [
                 750,
                 1000,
                 1500,
                 1750,
-            }
+            ]
         };
         OutlineSettings = new()
         {
@@ -581,7 +581,7 @@ public class ForwardRendering : IRenderPass
 
     public List<Matrix4> LightSpaceMatrices()
     {
-        List<Matrix4> matrices = new();
+        List<Matrix4> matrices = [];
         float[] shadowCascades = ShadowSettings.ShadowCascadeLevels;
         int cascadeCount = shadowCascades.Length;
         for (int i = 0; i <= cascadeCount; i++)

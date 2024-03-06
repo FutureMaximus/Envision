@@ -9,9 +9,9 @@ public class TerrainMesh : IDisposable
 {
     public readonly int X, Y, Z = 0;
 
-    public List<Vector3> Vertices = new();
-    public List<Vector3> Normals = new();
-    public List<uint> Indices = new();
+    public List<Vector3> Vertices = [];
+    public List<Vector3> Normals = [];
+    public List<uint> Indices = [];
     public int VerticesLength = 0;
     public int NormalsLength = 0;
     public int IndicesLength = 0;
