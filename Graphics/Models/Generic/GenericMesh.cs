@@ -87,6 +87,16 @@ public class GenericMesh(string name, GenericModelPart modelPart) : IIdentifiabl
             throw new ArgumentException("Texture coordinates are empty.");
         }
 
+        if (BoneIDs.Count == 0 || Weights.Count == 0)
+        {
+            // Fill up the bone weights and IDs with empty data.
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                BoneIDs.AddRange(GraphicsUtil.EmptyBoneIDs());
+                Weights.AddRange(GraphicsUtil.EmptyBoneWeights());
+            }
+        }
+
         // ========= Vertex Binding ========
         List<GenericVertexData> data = GeometryHelper.GetVertexDatas(Vertices, Normals, TextureCoords);
         if (HasTangents != false)
@@ -132,13 +142,13 @@ public class GenericMesh(string name, GenericModelPart modelPart) : IIdentifiabl
         GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
         GL.EnableVertexAttribArray(2);
 
-        // Layout 3: Bone IDs
+        /*// Layout 3: Bone IDs
         GL.VertexAttribIPointer(3, 4, VertexAttribIntegerType.Int, stride, 8 * sizeof(float));
         GL.EnableVertexAttribArray(3);
 
         // Layout 4: Weights
         GL.VertexAttribPointer(4, 4, VertexAttribPointerType.Float, false, stride, 12 * sizeof(float));
-        GL.EnableVertexAttribArray(4);
+        GL.EnableVertexAttribArray(4);*/
 
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
@@ -155,8 +165,8 @@ public class GenericMesh(string name, GenericModelPart modelPart) : IIdentifiabl
             GraphicsUtil.CheckError($"{Name} TangentBufferObject Load");
 
             // Layout 5: Tangent
-            GL.VertexAttribPointer(5, 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
-            GL.EnableVertexAttribArray(5);
+            GL.VertexAttribPointer(3, 3, VertexAttribPointerType.Float, false, Marshal.SizeOf(typeof(Vector3)), 0);
+            GL.EnableVertexAttribArray(3);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }

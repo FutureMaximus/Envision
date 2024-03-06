@@ -25,6 +25,7 @@ public class Engine
     public ShaderHandler? ShaderHandler;
     public Camera Camera { get; } = new();
     public Matrix4 Projection;
+    public Matrix4 ClusteredRenderProjection;
     public Matrix4 Orthographic;
     public Settings EngineSettings;
 
@@ -38,6 +39,8 @@ public class Engine
     public readonly AssetStreamer AssetStreamer;
 
     public List<Light> Lights;
+
+    public PBRDirectionalLight? DirectionalLight;
 
     public PhysicsSimulation PhysicsSimulation { get; } = new();
 
@@ -63,26 +66,59 @@ public class Engine
         EngineSettings = new()
         {
             UseDeferredRendering = false,
-            UseForwardRendering = true,
+            UseClusteredForwardRendering = true,
+            UseForwardRendering = false,
             UseDebugRendering = false,
             UseOrthographic = false,
-            MaximumLights = 1000,
-            FieldOfView = 45f,
+            MaximumLights = 15,
+            FieldOfView = 70f,
             AspectRatio = 1f,
             DepthNear = 0.1f,
-            DepthFar = 10000f,
+            DepthFar = 15000f,
             ClearColor = [0.05f, 0.05f, 0.05f, 1.0f]
         };
         Lights = new(EngineSettings.MaximumLights);
         AssetStreamer = new(this);
         DeltaTime = 0.0f;
         TimeElapsed = 0.0f;
+
+        Random rand = new();
+        for (int i = 0; i < EngineSettings.MaximumLights; i++)
+        {
+            Vector3 randColor = new((float)rand.NextDouble(),(float)rand.NextDouble(),(float)rand.NextDouble());
+            PBRLightData newLightData = new()
+            {
+                Color = randColor,
+                Intensity = 1.0f,
+                MaxRange = 20f,
+                Constant = 1.0f,
+                Linear = 0.09f,
+                Quadratic = 0.032f,
+                Enabled = false
+
+            };
+            float range = 200;
+            Vector3 randLoc = new(
+                              (float)rand.NextDouble() * range - 50,
+                              (float)rand.NextDouble() * range - 50,
+                              (float)rand.NextDouble() * range - 50);
+            PBRPointLight newLight = new(randLoc, newLightData);
+            Lights.Add(newLight);
+        }
+        PBRLightData lightData = new()
+        {
+            Color = new Vector3(1.0f, 1.0f, 1.0f),
+            Intensity = 5.0f,
+        };
+        PBRDirectionalLight directionalLight = new(new Vector3(0.5f, 1.0f, 0.0f), lightData);
+        DirectionalLight = directionalLight;
     }
 
     public struct Settings
     {
         public bool UseDeferredRendering;
         public bool UseForwardRendering;
+        public bool UseClusteredForwardRendering;
         public bool UseDebugRendering;
         public bool UseOrthographic;
         public int MaximumLights { get; set; }
@@ -92,6 +128,8 @@ public class Engine
         public float AspectRatio;
         public float DepthNear;
         public float DepthFar;
+        public float ClusteredDepthNear;
+        public float ClusteredDepthFar;
         public float[] ClearColor;
     }
 
@@ -101,46 +139,23 @@ public class Engine
     /// </summary>
     public void Load()
     {
-        // TODO: Have a global point light indexer.
-        for (int i = 0; i < EngineSettings.MaximumLights - 1; i++)
+        if (Window is null)
         {
-            Light? light = Lights[i];
-            if (light != null) continue;
-            PBRLightData newLightData = new()
-            {
-                Color = new Vector3(1.0f, 1.0f, 1.0f),
-                Intensity = 5.0f,
-                MaxRange = 0,
-                Constant = 1.0f,
-                Linear = 0.09f,
-                Quadratic = 0.032f,
-                Enabled = false
-                    
-            };
-            PBRPointLight newLight = new(new Vector3(0), newLightData);
-            Lights.Add(newLight);
+            throw new Exception("Window is null.");
         }
-        PBRLightData lightData = new()
-        {
-            Color = new Vector3(1.0f, 1.0f, 1.0f),
-            Intensity = 5.0f,
-        };
-        PBRDirectionalLight directionalLight = new(new Vector3(0.5f, 1.0f, 0.0f), lightData);
-        Lights.Add(directionalLight);
 
-        GraphicsUtil.CheckKHRSupported("GL_KHR_debug");
-        if (GraphicsUtil.KHRDebugSupported)
-        {
-            GL.Enable(EnableCap.DebugOutput);
-            //GL.Enable(EnableCap.DebugOutputSynchronous); Will block the main thread but can be useful.
-            Debug.Print("KHR_debug supported enabled debug mode.");
-        }
+        GraphicsUtil.LoadDebugger();
 
         ForwardRendering forwardRendering = new(this)
         {
             IsEnabled = EngineSettings.UseForwardRendering
         };
+        ClusteredForwardRendering clusteredForwardRendering = new(this)
+        {
+            IsEnabled = EngineSettings.UseClusteredForwardRendering
+        };
         RenderPasses.Add(forwardRendering);
+        RenderPasses.Add(clusteredForwardRendering);
 
         // If a texture is non-existing or invalid, use this instead.
         TextureEntries.AddTexture(TextureHelper.GenerateTextureNotFound());
@@ -152,12 +167,10 @@ public class Engine
             EngineSettings.ClearColor[3]
             );
 
-        if (Window is not null)
-        {
-            EngineSettings.AspectRatio = Window.Size.X / (float)Window.Size.Y;
-            EngineSettings.WindowSize = Window.Size;
-            EngineSettings.WindowPosition = new(0, 0);
-        }
+        
+        EngineSettings.AspectRatio = Window.ClientSize.X / (float)Window.ClientSize.Y;
+        EngineSettings.WindowSize = Window.ClientSize;
+        EngineSettings.WindowPosition = new(0, 0);
 
         if (EngineSettings.UseOrthographic)
         {
@@ -170,6 +183,14 @@ public class Engine
                  EngineSettings.DepthFar
                  );
             Orthographic = Projection;
+            ClusteredRenderProjection = Matrix4.CreateOrthographicOffCenter(
+                -EngineSettings.AspectRatio,
+                 EngineSettings.AspectRatio,
+                 -1.0f,
+                 1.0f,
+                 EngineSettings.ClusteredDepthNear,
+                 EngineSettings.ClusteredDepthFar
+                 );
         }
         else
         {
@@ -179,14 +200,20 @@ public class Engine
                 EngineSettings.DepthNear,
                 EngineSettings.DepthFar
                 );
+            ClusteredRenderProjection = Matrix4.CreatePerspectiveFieldOfView(
+                MathHelper.DegreesToRadians(EngineSettings.FieldOfView),
+                EngineSettings.AspectRatio,
+                EngineSettings.DepthNear,
+                EngineSettings.DepthFar
+                );
         }
-
-        GlobalShaderData.LoadBuffers(this);
 
         ShaderHandler = new(Config.Settings.ShaderPath);
         Shader screenFBOShader = new(ShaderHandler, "ScreenFBO", "screen");
-        ScreenFBO = new(screenFBOShader, EngineSettings.WindowSize);
+        ScreenFBO = new(screenFBOShader, Window.ClientSize);
         ScreenFBO.Load();
+
+        GlobalShaderData.LoadBuffers(this);
 
         GL.Enable(EnableCap.DepthTest);
         GL.DepthFunc(DepthFunction.Less);
@@ -229,7 +256,7 @@ public class Engine
                 EngineSettings.DepthFar
                 );
         }
-        EnvisionUI.Update(this);
+        //EnvisionUI.Update(this);
 
         if (Window is not null)
         {

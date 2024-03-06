@@ -19,7 +19,7 @@ public class Window : GameWindow
 
     public Window(int width, int height, ContextFlags flags) : base(GameWindowSettings.Default, new NativeWindowSettings()
     {
-        Size = (width, height),
+        ClientSize = (width, height),
         Title = "Envision",
         WindowBorder = WindowBorder.Resizable,
         WindowState = WindowState.Normal,

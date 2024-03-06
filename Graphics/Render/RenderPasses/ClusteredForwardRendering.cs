@@ -1,5 +1,7 @@
 ﻿using Envision.Core.Projects;
 using Envision.Core.Projects.ProjectGroups;
+using Envision.Graphics.Lighting;
+using Envision.Graphics.Lighting.Lights;
 using Envision.Graphics.Models;
 using Envision.Graphics.Models.Generic;
 using Envision.Graphics.Shaders;
@@ -27,13 +29,10 @@ public class ClusteredForwardRendering(Engine engine) : IRenderPass
         ClusterAABBShader = new(Engine.ShaderHandler, "ClusterAABBShader", "clusterAABB");
         ClusterLightCullShader = new(Engine.ShaderHandler, "ClusterLightCullShader", "clusterCullLight");
         ClusterPBRShader = new(Engine.ShaderHandler, "ClusterPBRShader", "clusteredPBR");
-        if (ClusterAABBShader is not null)
-        {
-            ClusterAABBShader.Use();
-            Shader.SetFloat(0, Engine.EngineSettings.DepthNear); // zNear
-            Shader.SetFloat(1, Engine.EngineSettings.DepthFar); // zFar
-            GL.DispatchCompute(GlobalShaderData.GRID_SIZE_X, GlobalShaderData.GRID_SIZE_Y, GlobalShaderData.GRID_SIZE_Z);
-        }
+        ClusterAABBShader.Use();
+        Shader.SetFloat(0, Engine.EngineSettings.DepthNear); // zNear
+        Shader.SetFloat(1, Engine.EngineSettings.DepthFar); // zFar
+        GL.DispatchCompute(GlobalShaderData.GRID_SIZE_X, GlobalShaderData.GRID_SIZE_Y, GlobalShaderData.GRID_SIZE_Z);
     }
 
     public void Render()
@@ -43,7 +42,6 @@ public class ClusteredForwardRendering(Engine engine) : IRenderPass
         {
             return;
         }
-
         if (Engine.ShaderHandler is null) return;
         ClusterLightCullShader?.Use();
         GL.DispatchCompute(1, 1, 6);
@@ -57,6 +55,13 @@ public class ClusteredForwardRendering(Engine engine) : IRenderPass
         ClusterPBRShader.Use();
         ClusterPBRShader.SetFloat("zNear", Engine.EngineSettings.DepthNear);
         ClusterPBRShader.SetFloat("zFar", Engine.EngineSettings.DepthFar);
+        if (Engine.DirectionalLight is null)
+        {
+            throw new Exception("Directional light is null.");
+        }
+        ClusterPBRShader.SetVector3($"dirLight.direction", ref Engine.DirectionalLight.Position);
+        ClusterPBRShader.SetVector3($"dirLight.color", ref Engine.DirectionalLight.LightData.Color);
+        ClusterPBRShader.SetFloat($"dirLight.intensity", Engine.DirectionalLight.LightData.Intensity);
 
         List<GenericModel> genericModels = [];
         if (activeProject.SelectedProjectGroup is ModelProjectGroup modelProject)

@@ -41,14 +41,15 @@ public sealed class Project : IDisposable
         {
             LocalTransformation = new()
             {
-                Scale = new(1f)
+                Position = new(0f, -10f, 0f),
+                Scale = new(10f, 10f, 10f)
             }
         };
         GenericModelPart part2 = new("Cube Part", model)
         {
             LocalTransformation = new()
             {
-                Position = new(2f, 0f, 0f),
+                Position = new(7f, 0f, 0f),
                 Scale = new(1f)
             }
         };
@@ -57,12 +58,12 @@ public sealed class Project : IDisposable
             LocalTransformation = new()
             {
                 Position = new(-2f, 0f, 2f),
-                Scale = new(1f)
+                Scale = new(5f)
             }
         };
         Texture2D defaultAlbedo = TextureHelper.GenerateColorTexture(Color.Gray, 128, 128);
         Texture2D defaultNormal = TextureHelper.GenerateColorTexture(ColorHelper.DefaultNormalMapColor, 128, 128);
-        Texture2D defaultARM = TextureHelper.GenerateColorTexture(Color.FromArgb(255, 127, 127), 128, 128);
+        Texture2D defaultARM = TextureHelper.GenerateColorTexture(Color.FromArgb(255, 100, 200), 128, 128);
         GenericMesh sphere = new Sphere(part, 1, 30, 30)
         {
             ShaderData = new GenericMeshShaderData(
@@ -85,7 +86,7 @@ public sealed class Project : IDisposable
                 }
             )
         };
-        GenericMesh superFormula = new Torus(part3, 8.0f, 3.0f, 20, 20)
+        GenericMesh superFormula = new Torus(part3, 3.0f, 1.0f, 20, 20)
         {
             ShaderData = new GenericMeshShaderData(
                 new PBRMaterialData()

@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using Envision.Graphics.Models.Generic;
+using Envision.Util;
 
 namespace Envision.Graphics.Models;
 
@@ -49,12 +50,8 @@ public static class GeometryHelper
     }
 
     /// <summary>
-    /// Creates a list of VertexData from a list of positions, normals, texture coordinates, and tangent and bitangent vectors.
+    /// Creates a list of VertexData from a list of positions, normals, and texture coordinates.
     /// </summary>
-    /// <param name="positions"></param>
-    /// <param name="normals"></param>
-    /// <param name="textureCoordinates"></param>
-    /// <param name="tangentAndBitangents"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<GenericVertexData> GetVertexDatas(
@@ -76,7 +73,32 @@ public static class GeometryHelper
 
         return vertexData;
     }
-    
+
+    /// <summary>
+    /// Creates a list of VertexData from a list of positions, normals, and texture coordinates.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static List<GenericVertexData> GetVertexDatasWithBones(
+        List<Vector3> positions, List<Vector3> normals, List<Vector2> textureCoordinates, List<int> boneIds, List<float> weights)
+    {
+        if (positions.Count != normals.Count || positions.Count != textureCoordinates.Count)
+            throw new ArgumentException("Position, normal, and texture coordinate lists must have the same length.");
+
+        List<GenericVertexData> vertexData = [];
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            Vector3 position = positions[i];
+            Vector3 normal = normals[i];
+            Vector2 textureCoordinate = textureCoordinates[i];
+
+            vertexData.Add(new GenericVertexData(position, normal, textureCoordinate));
+        }
+
+        return vertexData;
+    }
+
 
     /// <summary>
     /// Creates a list of VertexData from a list of positions, normals, and texture coordinates and calculates the tangent and bitangent vectors.

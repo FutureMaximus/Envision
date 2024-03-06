@@ -102,7 +102,7 @@ public class ForwardRendering : IRenderPass
     #region Loading
     public void Load()
     {
-        // ====== Shader loading ======
+        // ====== ScreenShader loading ======
         if (Engine.ShaderHandler is null) return;
         #region Shadow
         //_shadowDepthShader = Engine.ShaderHandler?.GetShader("ShadowDepth") ?? throw new NullReferenceException("Could not get shadow depth shader.");

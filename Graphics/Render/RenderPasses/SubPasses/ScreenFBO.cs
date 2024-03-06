@@ -1,13 +1,15 @@
 ﻿using Envision.Graphics.Shaders;
 using Envision.Graphics.Textures;
+using Envision.Util;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using System.Drawing;
 
 namespace Envision.Graphics.Render.RenderPasses.SubPasses;
 
 public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
 {
-    public Shader Shader = shader;
+    public Shader ScreenShader = shader;
     public Vector2i WindowSize = windowSize;
     public int FramebufferObject;
     public Texture2D? ScreenTexture;
@@ -20,6 +22,7 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
 
     public void Load()
     {
+        ScreenShader.Use();
         ScreenQuadVAO = GL.GenVertexArray();
         ScreenQuadVBO = GL.GenBuffer();
         GL.BindVertexArray(ScreenQuadVAO);
@@ -29,8 +32,10 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
         GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
         GL.EnableVertexAttribArray(1);
         GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+        GraphicsUtil.CheckError("ScreenFBO Load");
 
-        Shader.Use();
+        ScreenShader.Use();
+        GraphicsUtil.CheckError("ScreenFBO Shader Use");
 
         FramebufferObject = GL.GenFramebuffer();
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferObject);
@@ -43,10 +48,12 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, ScreenTexture, 0);
+        GraphicsUtil.CheckError("ScreenFBO FramebufferTexture2D");
 
         RenderBufferObject = GL.GenRenderbuffer();
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RenderBufferObject);
         GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, WindowSize.X, WindowSize.Y);
+        GraphicsUtil.CheckError("ScreenFBO RenderbufferStorage");
 
         GL.FramebufferRenderbuffer(
             FramebufferTarget.Framebuffer,
@@ -54,6 +61,7 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
             RenderbufferTarget.Renderbuffer,
             RenderBufferObject);
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
+        GraphicsUtil.CheckError("ScreenFBO FramebufferRenderbuffer");
 
         if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
         {
@@ -81,6 +89,7 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
     {
         if (ScreenTexture is null) return;
         WindowSize = windowSize;
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferObject);
         GL.BindTexture(TextureTarget.Texture2D, ScreenTexture);
         GL.TexImage2D(TextureTarget.Texture2D,
             0,
@@ -99,6 +108,7 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
                        FramebufferAttachment.DepthStencilAttachment,
                        RenderbufferTarget.Renderbuffer,
                        RenderBufferObject);
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
     }
 
     public void Render()
@@ -106,8 +116,8 @@ public class ScreenFBO(Shader shader, Vector2i windowSize) : IRenderPass
         if (ScreenTexture is null) return;
         GL.BindVertexArray(ScreenQuadVAO);
         ScreenTexture.Use(TextureUnit.Texture0);
-        Shader.Use();
-        Shader.SetInt("screenTexture", 0);
+        ScreenShader.Use();
+        ScreenShader.SetInt("screenTexture", 0);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
     }
 

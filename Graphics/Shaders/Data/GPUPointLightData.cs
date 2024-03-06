@@ -4,10 +4,18 @@ using OpenTK.Mathematics;
 
 namespace Envision.Graphics.Shaders.Data;
 
-/// <summary>Light data relevant for culling.</summary>
+/// <summary>
+/// Light data that is sent to the GPU.
+/// We need to use a struct for memory alignment.
+/// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 16)]
-public struct GPUPointLightData(Vector3 pos, float maxRange)
+public struct GPUPointLightData()
 {
-    public readonly Vector3 Position => pos;
-    public readonly float MaxRange => maxRange;
+    public Vector3 Position;
+    public float MaxRange;
+    public Vector3 Color;
+    public float Intensity;
+    public float Constant;
+    public float Linear;
+    public float Quadratic;
 }

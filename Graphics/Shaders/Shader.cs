@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Envision.Util;
+using OpenTK.Compute.OpenCL;
 
 namespace Envision.Graphics.Shaders;
 
@@ -12,7 +13,7 @@ public class Shader : IShader
     /// <summary> The shader handler that owns this shader. </summary>
     public ShaderHandler ShaderHandler { get; }
     public string Name { get; }
-    public int Handle { get; }
+    public int ProgramHandle { get; }
 
     public Shader(ShaderHandler handler, string name, string sourceName)
     {
@@ -89,41 +90,41 @@ public class Shader : IShader
             throw new FileNotFoundException($"Fragment source {sourceName} for shader {Name} could not be found.");
         }
 
-        Handle = GL.CreateProgram();
+        ProgramHandle = GL.CreateProgram();
 
         // Attach shaders
-        GL.AttachShader(Handle, vertexShader);
+        GL.AttachShader(ProgramHandle, vertexShader);
         if (tessControlSource != string.Empty && tessControlShader != -1)
         {
-            GL.AttachShader(Handle, tessControlShader);
+            GL.AttachShader(ProgramHandle, tessControlShader);
         }
         if (tessEvalSource != string.Empty && tessEvalShader != -1)
         {
-            GL.AttachShader(Handle, tessEvalShader);
+            GL.AttachShader(ProgramHandle, tessEvalShader);
         }
         if (geometrySource != string.Empty && geometryShader != -1)
         {
-            GL.AttachShader(Handle, geometryShader);
+            GL.AttachShader(ProgramHandle, geometryShader);
         }
-        GL.AttachShader(Handle, fragmentShader);
+        GL.AttachShader(ProgramHandle, fragmentShader);
 
-        LinkProgram(Handle, name);
+        LinkProgram(ProgramHandle, name);
 
         // Detach shaders
-        GL.DetachShader(Handle, vertexShader);
+        GL.DetachShader(ProgramHandle, vertexShader);
         if (tessControlSource != string.Empty && tessControlShader != -1)
         {
-            GL.DetachShader(Handle, tessControlShader);
+            GL.DetachShader(ProgramHandle, tessControlShader);
         }
         if (tessEvalSource != string.Empty && tessEvalShader != -1)
         {
-            GL.DetachShader(Handle, tessEvalShader);
+            GL.DetachShader(ProgramHandle, tessEvalShader);
         }
         if (geometrySource != string.Empty && geometryShader != -1)
         {
-            GL.DetachShader(Handle, geometryShader);
+            GL.DetachShader(ProgramHandle, geometryShader);
         }
-        GL.DetachShader(Handle, fragmentShader);
+        GL.DetachShader(ProgramHandle, fragmentShader);
 
         // Shader cleanup
         GL.DeleteShader(vertexShader);
@@ -141,7 +142,7 @@ public class Shader : IShader
         }
         GL.DeleteShader(fragmentShader);
 
-        string infoLog = GL.GetShaderInfoLog(Handle);
+        string infoLog = GL.GetShaderInfoLog(ProgramHandle);
         if (infoLog != string.Empty)
         {
             throw new Exception($"Error compiling shader with name {name}: {infoLog}");
@@ -167,6 +168,10 @@ public class Shader : IShader
 
     public static void CompileShader(int shader, string shaderName)
     {
+        if (!GL.IsShader(shader))
+        {
+            throw new Exception($"Shader({shader}) is not a valid shader.");
+        }
         GL.CompileShader(shader);
 
         GL.GetShader(shader, ShaderParameter.CompileStatus, out var code);
@@ -179,10 +184,15 @@ public class Shader : IShader
 
     private static void LinkProgram(int program, string shaderName)
     {
+        if (!GL.IsProgram(program))
+        {
+            throw new Exception($"Program({program}) is not a valid program.");
+        }
+
         GL.LinkProgram(program);
 
         GL.GetProgram(program, GetProgramParameterName.LinkStatus, out var code);
-        GraphicsUtil.CheckError($"Shader {shaderName} link");
+        //GraphicsUtil.CheckError($"Shader {shaderName} link");
         if (code != (int)All.True)
         {
             throw new Exception($"Error occurred while linking Program({program}) for shader {shaderName}: {code}");
@@ -193,11 +203,11 @@ public class Shader : IShader
 
     public void Use()
     {
-        GL.UseProgram(Handle);
-        GraphicsUtil.CheckError($"Shader {Name} use");
+        GL.UseProgram(ProgramHandle);
+        GraphicsUtil.CheckError($"{Name} Shader Use");
     }
 
-    public int GetAttribLocation(string attribName) => GL.GetAttribLocation(Handle, attribName);
+    public int GetAttribLocation(string attribName) => GL.GetAttribLocation(ProgramHandle, attribName);
 
     private readonly Dictionary<string, int> _uniformCache = new();
     public int GetUniformLocation(string uniformName)
@@ -207,7 +217,7 @@ public class Shader : IShader
             return location;
         }
 
-        location = GL.GetUniformLocation(Handle, uniformName);
+        location = GL.GetUniformLocation(ProgramHandle, uniformName);
         _uniformCache.Add(uniformName, location);
         return location;
     }
@@ -257,11 +267,11 @@ public class Shader : IShader
     public void SetVector4(string name, Vector4 data) => GL.Uniform4(GetUniformLocation(name), data);
     public static void SetVector4(int location, Vector4 data) => GL.Uniform4(location, data);
 
-    public static implicit operator int(Shader shader) => shader.Handle;
+    public static implicit operator int(Shader shader) => shader.ProgramHandle;
 
     public void Dispose()
     {
-        GL.DeleteShader(Handle);
+        GL.DeleteShader(ProgramHandle);
         GC.SuppressFinalize(this);
     }
 }

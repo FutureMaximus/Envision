@@ -28,14 +28,14 @@ public static class GlobalShaderData
 
     public static readonly uint GRID_SIZE_X = 16;
     public static readonly uint GRID_SIZE_Y = 9;
-    public static readonly uint GRID_SIZE_Z = 4;
+    public static readonly uint GRID_SIZE_Z = 24;
     public static readonly uint GRID_SIZE = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z;
     public static uint MAX_LIGHTS_PER_CLUSTER => _maxLightsPerCluster;
     private static uint _maxLightsPerCluster;
 
     public static void LoadBuffers(Engine engine)
     {
-        _maxLightsPerCluster = (uint)engine.EngineSettings.MaximumLights % 950;
+        _maxLightsPerCluster = 50;
 
         // Uniform Buffer Objects (Read-Only)
 
@@ -81,16 +81,18 @@ public static class GlobalShaderData
         {
             throw new Exception("Screen FBO is null");
         }
-        screen2View.TileSizePixels.X = 1f / MathF.Ceiling(engine.ScreenFBO.WindowSize.X / (float)GRID_SIZE_X);
-        screen2View.TileSizePixels.Y = 1f / MathF.Ceiling(engine.ScreenFBO.WindowSize.Y / (float)GRID_SIZE_Y);
-        screen2View.ViewPixelSize = new Vector2(1f / engine.ScreenFBO.WindowSize.X, 1f / engine.ScreenFBO.WindowSize.Y);
+        screen2View.TileSizePixels.X = 1f / MathF.Ceiling(engine.Window.ClientSize.X / (float)GRID_SIZE_X);
+        screen2View.TileSizePixels.Y = 1f / MathF.Ceiling(engine.Window.ClientSize.Y / (float)GRID_SIZE_Y);
+        screen2View.ViewPixelSize = new Vector2(1f / engine.Window.ClientSize.X, 1f / engine.Window.ClientSize.Y);
         // Basically reduced a log function into a simple multiplication an addition by pre-calculating these
-        screen2View.SliceScalingFactor = GRID_SIZE_Z / MathF.Log2(engine.EngineSettings.DepthFar / engine.EngineSettings.DepthNear);
+        screen2View.SliceScalingFactor = GRID_SIZE_Z / MathF.Log2(engine.EngineSettings.ClusteredDepthFar / engine.EngineSettings.ClusteredDepthNear);
         screen2View.SliceBiasFactor = -(GRID_SIZE_Z * MathF.Log2(
-            engine.EngineSettings.DepthNear) / MathF.Log2(engine.EngineSettings.DepthFar / engine.EngineSettings.DepthNear));
+            engine.EngineSettings.ClusteredDepthNear) / MathF.Log2(engine.EngineSettings.ClusteredDepthFar / engine.EngineSettings.ClusteredDepthNear));
         Screen2ViewSSBO = GL.GenBuffer();
+        Console.WriteLine($"{engine.EngineSettings.DepthFar}");
         GL.BindBuffer(BufferTarget.ShaderStorageBuffer, Screen2ViewSSBO);
         GL.BufferData(BufferTarget.ShaderStorageBuffer, Marshal.SizeOf(typeof(Screen2View)), IntPtr.Zero, BufferUsageHint.StaticCopy);
+        GL.BufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, Marshal.SizeOf(typeof(Screen2View)), ref screen2View);
         GraphicsUtil.LabelObject(ObjectLabelIdentifier.Buffer, Screen2ViewSSBO, "Screen2ViewSSBO Location 2");
         GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 2, Screen2ViewSSBO);
         GraphicsUtil.CheckError("SSBO 2 (Screen2View) Buffer Base");
@@ -110,7 +112,17 @@ public static class GlobalShaderData
             if (light is PBRPointLight pointLight)
             {
                 PBRLightData lightData = pointLight.LightData;
-                GPUPointLightData gpuPointLightData = new(pointLight.Position, lightData.MaxRange);
+                GPUPointLightData gpuPointLightData = new()
+                {
+                    Position = pointLight.Position,
+                    MaxRange = lightData.MaxRange,
+                    Color = lightData.Color,
+                    Intensity = lightData.Intensity,
+                    Constant = lightData.Constant,
+                    Linear = lightData.Linear,
+                    Quadratic = lightData.Quadratic
+                };
+                // TODO: Implement light updates.
                 GL.BufferSubData(BufferTarget.ShaderStorageBuffer, 
                     Marshal.SizeOf(typeof(GPUPointLightData)) * pointLightIndex,
                     Marshal.SizeOf(typeof(GPUPointLightData)), ref gpuPointLightData);
@@ -163,6 +175,7 @@ public static class GlobalShaderData
         GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)), Marshal.SizeOf(typeof(Matrix4)), ref projViewUniform.View);
         GL.BufferSubData(BufferTarget.UniformBuffer, Marshal.SizeOf(typeof(Matrix4)) * 2, Marshal.SizeOf(typeof(Vector3)), ref projViewUniform.ViewPos);
         GraphicsUtil.CheckError("UBO 0 (ProjView) Error");
+        GL.BindBuffer(BufferTarget.UniformBuffer, 0);
     }
 
     // TODO: Update Light Data if there are changes to the lights.

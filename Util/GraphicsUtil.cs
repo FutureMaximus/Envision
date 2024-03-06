@@ -6,30 +6,31 @@ namespace Envision.Util;
 /// <summary> Reference for error code information https://registry.khronos.org/OpenGL-Refpages/gl4/. </summary>
 public static class GraphicsUtil
 {
-    public static bool KHRDebugSupported => _debug;
-    private static bool _debug = false;
-
     [Conditional("DEBUG")]
-    public static void CheckKHRSupported(string extension)
+    public static void LoadDebugger()
     {
-        int major = GL.GetInteger(GetPName.MajorVersion);
-        int minor = GL.GetInteger(GetPName.MinorVersion);
+        
+        GL.Enable(EnableCap.DebugOutput);
+        GL.Enable(EnableCap.DebugOutputSynchronous);
+        GL.DebugMessageCallback(DebugCallback, IntPtr.Zero);
+    }
 
-        string[] extensions = GL.GetString(StringName.Extensions).Split(' ');
-        foreach (string ext in extensions)
+    private static void DebugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
+    {
+        string msg = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(message, length);
+        if (severity == DebugSeverity.DebugSeverityNotification)
         {
-            if (ext == extension && major >= 4 && minor >= 6)
-            {
-                _debug = true;
-            }
+            return;
         }
+        DebugLogger.Log($"<red>OpenGL Debug {severity}: {msg}");
+        Debug.WriteLine($"OpenGL Debug {severity}: {msg}");
+        Console.WriteLine($"OpenGL Debug {severity}: {msg}");
     }
 
     [Conditional("DEBUG")]
     public static void LabelObject(ObjectLabelIdentifier objLabel, int glObject, string name)
     {
-        if (KHRDebugSupported)
-            GL.ObjectLabel(objLabel, glObject, name.Length, name);
+        GL.ObjectLabel(objLabel, glObject, name.Length, name);
     }
 
     /// <summary>Checks errors when debug is enabled.</summary>
@@ -44,6 +45,7 @@ public static class GraphicsUtil
         {
             DebugLogger.Log($"<red>OpenGL Error {title} {i++}: {error}. See reference for error code information.");
             Debug.WriteLine($"OpenGL Error {title} {i++}: {error}. See reference for error code information.");
+            Console.WriteLine($"OpenGL Error {title} {i++}: {error}. See reference for error code information.");
         }
     }
 

@@ -32,13 +32,6 @@ struct DirectionalLight
 };
 uniform DirectionalLight dirLight;
 
-layout (std140) uniform LightSpaceMatrices
-{
-    mat4 lightSpaceMatrices[16];
-};
-uniform float cascadePlaneDistances[16];
-uniform int cascadeCount;   // number of frusta - 1
-
 // ===================================
 
 // ====== Storage Buffer Objects ======
@@ -52,11 +45,12 @@ struct LightGrid
 struct PointLight
 {
 	vec3  position;
-	vec3  color;
-	float intensity;
-	float constant;
-	float linear;
-	float quadratic;
+    float maxRange;
+    vec3  color;
+    float intensity;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 layout (std430, binding = 2) buffer screenToView
@@ -65,8 +59,8 @@ layout (std430, binding = 2) buffer screenToView
     uint tileSizeX;
     uint tileSizeY;
     uint tileSizeZ;
-    uint tileSizePx;
-    uvec2 viewPxSize;
+    vec2 tileSizePx;
+    vec2 viewPxSize;
     float scale;
     float bias;
 };
@@ -178,7 +172,7 @@ float linearDepth(float depthSample)
 // ===================================
 
 vec3 CalcDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0);
-vec3 CalcPointLight(uint index, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float roughness, float metallic, vec3 F0);
+vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float roughness, float metallic, vec3 F0);
 
 void main()
 {
@@ -220,7 +214,8 @@ void main()
 	Lo += CalcDirectionalLight(dirLight, N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
 	for (uint i = 0; i < lightCount; i++)
 	{
-		Lo += CalcPointLight(globalLightIndexList[lightIndexOffset + i], N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
+		PointLight pointLight = pointLights[globalLightIndexList[lightIndexOffset + i]];
+		Lo += CalcPointLight(pointLight, N, V, fs_in.FragPos, albedo, roughness, metallic, F0);
 	}
 
 	// Will be replaced by IBL
@@ -262,18 +257,17 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 fragPos, 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 CalcPointLight(uint index, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0)
+vec3 CalcPointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float rough, float metal, vec3 F0)
 {
-	PointLight light = pointLights[index];
-
 	vec3 L = normalize(light.position - fs_in.FragPos);
 	vec3 H = normalize(V + L);
 	float dist = length(light.position - fs_in.FragPos);
 	// Inverse square law attenuation for control over the light's falloff.
-	float attenuation = 1.0 / (light.constant + light.linear * dist +
-	light.quadratic * (dist * dist));
+	//float attenuation = 1.0 / (light.constant + light.linear * dist +
+	//light.quadratic * (dist * dist));
+	float attenuation = pow(clamp(1 - pow((dist / light.maxRange), 4.0), 0.0, 1.0), 2.0)/(1.0  + (dist * dist));
 	// Intesity to control the brightness of the light
-	attenuation *= light.intensity;
+	//attenuation *= light.intensity;
 	vec3  radiance = light.color * attenuation;
 
 	float NDF = D_GGX(N, H, rough);

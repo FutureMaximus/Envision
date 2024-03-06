@@ -88,7 +88,7 @@ public class SuperFormula : GenericMesh
         int currentIndex = i * nv + j;
         if (currentIndex < 0 || currentIndex >= vertices.Count)
         {
-            // Handle the case where the current index is out of bounds
+            // ProgramHandle the case where the current index is out of bounds
             return Vector3.UnitY;
         }
 
@@ -113,7 +113,7 @@ public class SuperFormula : GenericMesh
 
         if (rightVertex == Vector3.Zero || downVertex == Vector3.Zero)
         {
-            // Handle the case where the next indices are out of bounds or fallback values are not set
+            // ProgramHandle the case where the next indices are out of bounds or fallback values are not set
             return Vector3.UnitY;
         }
 

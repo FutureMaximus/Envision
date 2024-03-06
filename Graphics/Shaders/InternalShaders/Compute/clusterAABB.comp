@@ -2,15 +2,15 @@
 
 layout(local_size_x = 1, local_size_y = 1) in;
 
-// Description: This is the compute shader that calculates the AABBs of the clusters.
-// Note: If these variables change the compute shader must be ran again to recalculate the AABBs.
+// This is the compute shader that calculates the AABBs of the clusters.
+// Note If these variables change the compute shader must be ran again to recalculate the AABBs.
 // We could just run the compute shader every frame but where's the fun in that?
 // - FOV
 // - zNear
 // - zFar
 // - ScreenDimensions
 // - Aspect Ratio
-// TODO: Add a way to determine active clusters? We'd need the depth buffer for that but could offer some extra optimization.
+// TODO Add a way to determine active clusters? We'd need the depth buffer for that but could offer some extra optimization.
 
 // Input
 layout(location = 0) uniform float zNear; // Near plane distance.
@@ -41,8 +41,8 @@ layout (std430, binding = 2) buffer screenToView
     uint tileSizeX;
     uint tileSizeY;
     uint tileSizeZ;
-    uint tileSizePx;
-    uvec2 viewPxSize;
+    vec2 tileSizePx;
+    vec2 viewPxSize;
     float scale;
     float bias;
 };
@@ -53,7 +53,7 @@ vec3 lineIntersectionToZPlane(vec3 A, vec3 B, float zDistance);
 
 // Each cluster has it's own thread ID in x, y and z
 // Here we dispatch 16x9x24 threads, one thread per cluster.
-// Note: If the aspect ratio changes and its not 16:9 we need to account for that.
+// Note If the aspect ratio changes we need to account for that.
 void main()
 {
 	const vec3 eyePos = vec3(0.0);
@@ -116,11 +116,11 @@ vec4 clipToView(vec4 clip)
 vec4 screen2View(vec4 screen)
 {
     // Convert to normalized device coordinates
-    vec2 texCoord = screen.xy / viewPxSize.xy;
+    vec2 texCoord = screen.xy * viewPxSize.xy;
 
     // Convert to clipspace
-    vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y) * 2.0 - 1.0, screen.z, screen.w);
+    //vec4 clip = vec4(vec2(texCoord.x, 1.0 - texCoord.y) * 2.0 - 1.0, screen.z, screen.w);
+    vec4 clip = vec4(vec2(texCoord.x, texCoord.y) * 2.0 - 1.0, screen.z, screen.w);
 
     return clipToView(clip);
 }
-

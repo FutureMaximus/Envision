@@ -5,6 +5,11 @@ struct PointLight
 {
 	vec3  position;
     float maxRange;
+    vec3  color;
+    float intensity;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 struct LightGrid
@@ -30,8 +35,8 @@ layout (std430, binding = 2) buffer screenToView
     uint tileSizeX;
     uint tileSizeY;
     uint tileSizeZ;
-    uint tileSizePx;
-    uvec2 viewPxSize;
+    vec2 tileSizePx;
+    vec2 viewPxSize;
     float scale;
     float bias;
 };
@@ -98,7 +103,7 @@ void main()
         // Iterating within the current batch of lights.
         for (uint light = 0; light < threadCount; light++)
         {
-            if (testSphereAABB(lightIndex, tileIndex))
+            if (testSphereAABB(light, tileIndex))
 			{
 				visibleLightIndices[visibleLightCount] = batch * threadCount + light;
 				visibleLightCount++;
